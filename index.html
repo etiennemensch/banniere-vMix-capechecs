@@ -1,520 +1,480 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bannière Échecs Rotative - Fond Transparent</title>
-    <style>
-        :root {
-            /* FOND TRANSPARENT */
-            --bg-color: transparent;
-            --card-bg: rgba(15, 23, 42, 0.65); /* Fond semi-transparent sombre pour lisibilité */
-            --card-border: rgba(255, 255, 255, 0.15);
-            
-            /* COULEURS TEXTE & ACCENTS */
-            --text-primary: #ffffff;
-            --text-secondary: #cbd5e1;
-            --accent-gold: #f59e0b;
-            --accent-white: #ffffff;
-            --accent-black: #94a3b8;
-            --score-win: #22c55e;
-            --score-draw: #eab308;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bandeau Résultats Échecs vMix - CAPECHECS</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome / Phosphor Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: transparent;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color) !important;
-            overflow: hidden;
-            color: var(--text-primary);
-        }
+    /* Style du conteneur de défilement */
+    .ticker-viewport {
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
 
-        /* Conteneur principal */
-        .banner-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 10px;
-            background: transparent;
-            position: relative;
-        }
+    /* Animation pas-à-pas verticale */
+    .ticker-card {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      opacity: 0;
+      transform: translateY(100%);
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease-in-out;
+      pointer-events: none;
+    }
 
-        /* En-tête du tournoi */
-        .tournament-header {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 16px;
-            margin-bottom: 8px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            backdrop-filter: blur(8px);
-        }
+    .ticker-card.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
 
-        .tournament-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: var(--accent-gold);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
+    .ticker-card.exit {
+      opacity: 0;
+      transform: translateY(-100%);
+    }
 
-        .round-info {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
+    /* Gradient or/doré spécial Capechecs */
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-        /* Fenêtre de défilement de la carte */
-        .card-viewport {
-            width: 100%;
-            max-width: 900px;
-            height: 90px;
-            position: relative;
-            overflow: hidden;
-        }
+    .gold-bg {
+      background: linear-gradient(135deg, #BF953F 0%, #E6C670 50%, #AA771C 100%);
+    }
 
-        /* Carte de jeu */
-        .match-card {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            display: grid;
-            grid-template-columns: 70px 1fr 100px 1fr;
-            align-items: center;
-            padding: 0 15px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            transform: translateY(100%);
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .match-card.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .match-card.exit {
-            opacity: 0;
-            transform: translateY(-100%);
-        }
-
-        /* Numéro d'échiquier */
-        .board-badge {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(245, 158, 11, 0.2);
-            border: 1px solid var(--accent-gold);
-            border-radius: 6px;
-            padding: 6px 4px;
-            color: var(--accent-gold);
-            font-weight: 800;
-        }
-
-        .board-label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            opacity: 0.9;
-        }
-
-        .board-number {
-            font-size: 1.2rem;
-            line-height: 1;
-        }
-
-        /* Blocs joueurs (Blancs / Noirs) */
-        .player-box {
-            display: flex;
-            flex-direction: column;
-            padding: 0 12px;
-        }
-
-        .player-box.white {
-            text-align: right;
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .player-box.black {
-            text-align: left;
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .player-name {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-        }
-
-        .player-meta {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-top: 2px;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .player-box.white .player-meta {
-            justify-content: flex-end;
-        }
-
-        .elo-tag {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .pts-tag {
-            color: var(--accent-gold);
-            font-weight: 600;
-        }
-
-        /* Bloc Score / Résultat Central */
-        .score-box {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.25rem;
-            font-weight: 800;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 1px solid var(--card-border);
-            color: var(--accent-gold);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            letter-spacing: 1px;
-        }
-
-        .score-empty {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-            letter-spacing: 0;
-        }
-
-        /* Panneau d'administration/configuration (Masquable) */
-        .config-toggle {
-            position: fixed;
-            top: 5px;
-            right: 5px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 4px;
-            padding: 3px 8px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            z-index: 1000;
-            opacity: 0.3;
-            transition: opacity 0.2s;
-        }
-
-        .config-toggle:hover { opacity: 1; }
-
-        .config-panel {
-            display: none;
-            position: fixed;
-            top: 30px;
-            right: 5px;
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid var(--card-border);
-            padding: 12px;
-            border-radius: 8px;
-            z-index: 999;
-            width: 320px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-
-        .config-panel.open { display: block; }
-
-        .config-panel input {
-            width: 100%;
-            padding: 6px;
-            margin: 6px 0 10px 0;
-            background: #0f172a;
-            border: 1px solid var(--card-border);
-            color: #fff;
-            border-radius: 4px;
-            font-size: 0.8rem;
-        }
-
-        .config-panel button {
-            background: var(--accent-gold);
-            color: #000;
-            border: none;
-            padding: 6px 12px;
-            font-weight: 700;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-        }
-    </style>
+    /* Masquer le panneau de config en mode overlay propre */
+    .config-panel {
+      transition: transform 0.3s ease, opacity 0.3s ease;
+    }
+    .config-panel.collapsed {
+      transform: translateY(-110%);
+      opacity: 0.2;
+    }
+    .config-panel.collapsed:hover {
+      opacity: 1;
+    }
+  </style>
 </head>
-<body>
+<body class="h-screen w-screen flex flex-col justify-end p-2 select-none">
 
-    <button class="config-toggle" onclick="toggleConfig()">⚙ Configuration URL</button>
+  <!-- PANNEAU DE CONFIGURATION (Rétractable) -->
+  <div id="configPanel" class="config-panel fixed top-2 left-2 right-2 z-50 bg-slate-900/95 text-white p-3 rounded-xl border border-amber-500/30 shadow-2xl backdrop-blur-md text-xs flex flex-wrap gap-3 items-center justify-between">
+    <div class="flex items-center gap-2 font-bold text-amber-400">
+      <i class="fa-solid fa-gear text-sm"></i>
+      <span>Configuration Live FFE</span>
+    </div>
+
+    <div class="flex-1 min-w-[300px] flex gap-2">
+      <input type="text" id="ffeUrlInput" 
+             value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01" 
+             placeholder="Coller l'URL FFE de la ronde ici..." 
+             class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-1.5 text-white focus:outline-none focus:border-amber-400 font-mono">
+      <button onclick="updateSource()" class="gold-bg text-black font-bold px-4 py-1.5 rounded hover:brightness-110 transition">
+        Charger
+      </button>
+    </div>
+
+    <div class="flex items-center gap-4">
+      <label class="flex items-center gap-1.5 cursor-pointer">
+        <span class="text-slate-400">Durée/Carte:</span>
+        <input type="number" id="durationInput" value="5" min="2" max="20" class="w-12 bg-slate-800 border border-slate-700 rounded text-center py-1 text-amber-300">
+        <span class="text-slate-400">sec</span>
+      </label>
+
+      <div class="flex items-center gap-2 border-l border-slate-700 pl-3">
+        <span id="statusIndicator" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="statusText" class="text-slate-300">Connexion...</span>
+      </div>
+
+      <button onclick="toggleConfig()" class="text-slate-400 hover:text-white ml-2" title="Masquer le panneau">
+        <i class="fa-solid fa-chevron-up text-base"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- BOUTON RE-OUVERTURE CONFIG SI MASQUÉ -->
+  <button id="openConfigBtn" onclick="toggleConfig()" class="fixed top-2 right-2 z-40 bg-slate-900/80 text-amber-400 p-2 rounded-lg border border-amber-500/30 text-xs hidden hover:bg-slate-900">
+    <i class="fa-solid fa-gear"></i> URL FFE
+  </button>
+
+  <!-- BANDEAU / RUBAN PRINCIPAL INFOS (Fit dans le cadre "Infos" bas) -->
+  <div class="w-full h-24 bg-slate-950/95 border-2 border-amber-500/50 rounded-2xl shadow-2xl flex items-center overflow-hidden relative backdrop-blur-sm">
     
-    <div class="config-panel" id="configPanel">
-        <label style="font-size: 0.75rem; font-weight: bold;">URL FFE de la Ronde :</label>
-        <input type="text" id="ffeUrlInput" value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01">
-        <button onclick="updateUrl()">Mettre à jour la ronde</button>
+    <!-- Étiquette gauche "RONDE LIVE" -->
+    <div class="h-full px-6 bg-amber-500/10 border-r border-amber-500/30 flex flex-col justify-center items-center min-w-[130px] shrink-0">
+      <span class="text-amber-400 font-black text-xs tracking-widest uppercase">RONDE LIVE</span>
+      <span id="boardCount" class="text-white/60 text-[10px] font-semibold mt-0.5">Chargement...</span>
     </div>
 
-    <div class="banner-container">
-        <!-- En-tête -->
-        <div class="tournament-header">
-            <div class="tournament-title" id="tourneyTitle">Chargement de la ronde...</div>
-            <div class="round-info" id="roundInfo">FFE Live</div>
-        </div>
+    <!-- ZONE D'ANIMATION DE DÉFILEMENT (VIEWPORT) -->
+    <div class="flex-1 h-full relative px-6" id="tickerViewport">
+      
+      <!-- État d'attente/chargement -->
+      <div id="loadingState" class="absolute inset-0 flex items-center justify-center gap-3 text-amber-400/80">
+        <i class="fa-solid fa-circle-notch animate-spin text-xl"></i>
+        <span class="font-bold text-sm tracking-wide">Récupération des données FFE en cours...</span>
+      </div>
 
-        <!-- Zone d'affichage rotative -->
-        <div class="card-viewport" id="cardViewport">
-            <!-- La carte active sera générée dynamiquement ici -->
-        </div>
     </div>
 
-    <script>
-        // URL FFE par défaut
-        let currentFfeUrl = "https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01";
+    <!-- LOGO / DECO DROITE -->
+    <div class="h-full px-5 border-l border-amber-500/20 flex items-center justify-center shrink-0 bg-slate-900/50">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-chess-king text-2xl text-amber-400"></i>
+        <div class="text-left hidden lg:block">
+          <div class="font-black text-xs text-white leading-none">CAPECHECS</div>
+          <div class="text-[9px] text-amber-400/80 tracking-wider font-semibold">CAP D'AGDE</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Variables globales
+    let gamesData = [];
+    let currentIndex = 0;
+    let slideTimer = null;
+    let refreshTimer = null;
+    let displayDuration = 5000; // 5 secondes par échiquier
+    let currentFfeUrl = "";
+
+    // Démarrage automatique
+    window.addEventListener('DOMContentLoaded', () => {
+      // Détecter si une URL est passée en paramètre URL (?url=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlParam = urlParams.get('url');
+      const durationParam = urlParams.get('duration');
+
+      if (durationParam && !isNaN(durationParam)) {
+        displayDuration = parseInt(durationParam) * 1000;
+        document.getElementById('durationInput').value = durationParam;
+      }
+
+      if (urlParam) {
+        currentFfeUrl = decodeURIComponent(urlParam);
+        document.getElementById('ffeUrlInput').value = currentFfeUrl;
+      } else {
+        currentFfeUrl = document.getElementById('ffeUrlInput').value;
+      }
+
+      // Écouteur pour la durée
+      document.getElementById('durationInput').addEventListener('change', (e) => {
+        displayDuration = Math.max(2, parseInt(e.target.value) || 5) * 1000;
+        restartAnimation();
+      });
+
+      // Lancer la première mise à jour
+      fetchFFEData();
+
+      // Programmer le rafraîchissement automatique FFE en arrière-plan (toutes les 45 secondes)
+      refreshTimer = setInterval(fetchFFEData, 45000);
+    });
+
+    // Masquer / Afficher le panneau de configuration
+    function toggleConfig() {
+      const panel = document.getElementById('configPanel');
+      const btn = document.getElementById('openConfigBtn');
+      panel.classList.toggle('collapsed');
+      if (panel.classList.contains('collapsed')) {
+        btn.classList.remove('hidden');
+      } else {
+        btn.classList.add('hidden');
+      }
+    }
+
+    // Mise à jour de l'URL manuellement depuis l'interface
+    function updateSource() {
+      const inputUrl = document.getElementById('ffeUrlInput').value.trim();
+      if (!inputUrl) return;
+      currentFfeUrl = inputUrl;
+      
+      document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
+      document.getElementById('statusText').textContent = "Mise à jour...";
+      
+      fetchFFEData();
+    }
+
+    // Récupération multi-proxys très robuste pour contourner CORS et erreurs serveur
+    async function fetchFFEData() {
+      if (!currentFfeUrl) return;
+
+      const targetUrl = currentFfeUrl;
+
+      // Liste mise à jour de proxys performants
+      const proxies = [
+        {
+          name: "CorsDev",
+          fetch: async (url) => {
+            const res = await fetch(`https://proxy.cors.dev/${url}`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.text();
+          }
+        },
+        {
+          name: "CodeTabs",
+          fetch: async (url) => {
+            const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.text();
+          }
+        },
+        {
+          name: "AllOrigins",
+          fetch: async (url) => {
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}&ts=${Date.now()}`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            return json.contents;
+          }
+        },
+        {
+          name: "CorsProxy",
+          fetch: async (url) => {
+            const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(6000) });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return await res.text();
+          }
+        }
+      ];
+
+      let htmlContent = null;
+      let successfulProxy = null;
+
+      for (const proxy of proxies) {
+        try {
+          console.log(`[FFE Fetch] Tentative via ${proxy.name}...`);
+          htmlContent = await proxy.fetch(targetUrl);
+          if (htmlContent && htmlContent.length > 300) {
+            successfulProxy = proxy.name;
+            break;
+          }
+        } catch (err) {
+          console.warn(`[FFE Fetch] Échec avec ${proxy.name}:`, err.message);
+        }
+      }
+
+      if (htmlContent) {
+        console.log(`[FFE Fetch] Succès via ${successfulProxy}!`);
+        parseFFEHtml(htmlContent);
+        document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
+        document.getElementById('statusText').textContent = `En direct (${gamesData.length} p.)`;
+      } else {
+        console.warn("[FFE Fetch] Tous les proxys réseau ont échoué. Basculement en mode secours/démo.");
         
-        // Liste des proxys pour contourner CORS
-        const corsProxies = [
-            (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`
-        ];
-
-        let matchesData = [];
-        let currentIndex = 0;
-        let displayTimer = null;
-        let fetchTimer = null;
-
-        // Récupérer le paramètre ?url= dans l'adresse si présent (Utile pour vMix)
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('url')) {
-            currentFfeUrl = urlParams.get('url');
-            document.getElementById('ffeUrlInput').value = currentFfeUrl;
+        // En cas d'échec complet du réseau FFE, utiliser les données courantes ou charger la démo
+        if (gamesData.length === 0) {
+          loadFallbackDemoData();
         }
+        document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-amber-500";
+        document.getElementById('statusText').textContent = "Mode Démo / Hors-ligne";
+      }
+    }
 
-        function toggleConfig() {
-            document.getElementById('configPanel').classList.toggle('open');
+    // Parser le tableau HTML retourné par la FFE
+    function parseFFEHtml(htmlString) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlString, 'text/html');
+      
+      const tables = doc.querySelectorAll('table');
+      let targetTable = null;
+
+      tables.forEach(table => {
+        const text = table.textContent;
+        if (text.includes('Ech.') || text.includes('Pts') || text.includes('Blancs')) {
+          targetTable = table;
         }
+      });
 
-        function updateUrl() {
-            const inputVal = document.getElementById('ffeUrlInput').value.trim();
-            if (inputVal) {
-                currentFfeUrl = inputVal;
-                toggleConfig();
-                fetchFFEData();
-            }
-        }
+      if (!targetTable) {
+        console.warn("Tableau FFE non trouvé dans le HTML fourni.");
+        if (gamesData.length === 0) loadFallbackDemoData();
+        return;
+      }
 
-        // Fonction pour télécharger et parser la page FFE
-        async function fetchFFEData() {
-            let htmlText = "";
-            
-            // Essai via le proxy AllOrigins
-            try {
-                const response = await fetch(corsProxies[0](currentFfeUrl));
-                if (response.ok) {
-                    const data = await response.json();
-                    htmlText = data.contents;
-                }
-            } catch (e) {
-                console.warn("Échec proxy 1, tentative proxy 2...");
-                try {
-                    const response = await fetch(corsProxies[1](currentFfeUrl));
-                    if (response.ok) {
-                        htmlText = await response.text();
-                    }
-                } catch (err) {
-                    console.error("Erreur de récupération réseau :", err);
-                }
-            }
+      const rows = targetTable.querySelectorAll('tr');
+      const newGames = [];
 
-            if (htmlText) {
-                parseFFEHTML(htmlText);
-            } else if (matchesData.length === 0) {
-                // Données de secours si le réseau/proxy est indisponible
-                loadFallbackData();
-            }
-        }
+      rows.forEach((row) => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 7) {
+          const ech = cells[0]?.textContent?.trim();
+          
+          if (ech && !isNaN(parseInt(ech))) {
+            const ptsW = cells[1]?.textContent?.trim() || "0";
+            const nameW = cleanPlayerName(cells[2]?.textContent?.trim() || "");
+            const eloW = cells[3]?.textContent?.trim() || "";
+            const res = cells[4]?.textContent?.trim() || "VS";
+            const nameB = cleanPlayerName(cells[5]?.textContent?.trim() || "");
+            const eloB = cells[6]?.textContent?.trim() || "";
+            const ptsB = cells[7]?.textContent?.trim() || "0";
 
-        // Extraction des données de la table HTML de la FFE
-        function parseFFEHTML(htmlContent) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlContent, 'text/html');
-
-            // Recherche du titre du tournoi et de la ronde
-            const tables = doc.querySelectorAll('table');
-            let parsedMatches = [];
-            let titleText = "Tournoi d'Échecs";
-            let roundText = "Résultats";
-
-            tables.forEach(table => {
-                const rows = table.querySelectorAll('tr');
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('td');
-                    
-                    // Détection du titre de la ronde
-                    if (cells.length === 1 || cells.length === 8) {
-                        const cellText = row.textContent;
-                        if (cellText.includes('Résultats de la ronde') || cellText.includes('Open')) {
-                            const lines = cellText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                            if (lines.length >= 1) titleText = lines[0];
-                            if (lines.length >= 2) roundText = lines[1];
-                        }
-                    }
-
-                    // Détection des colonnes : Ech, Pts, Blancs, Elo, Res, Noirs, Elo, Pts
-                    if (cells.length === 8) {
-                        const boardNum = cells[0].textContent.trim();
-                        if (!isNaN(parseInt(boardNum))) {
-                            parsedMatches.push({
-                                board: boardNum,
-                                whitePts: cells[1].textContent.trim(),
-                                whiteName: cells[2].textContent.trim(),
-                                whiteElo: cells[3].textContent.trim().replace(/\u00a0/g, ' '),
-                                result: cells[4].textContent.trim(),
-                                blackName: cells[5].textContent.trim(),
-                                blackElo: cells[6].textContent.trim().replace(/\u00a0/g, ' '),
-                                blackPts: cells[7].textContent.trim()
-                            });
-                        }
-                    }
-                });
+            newGames.push({
+              board: ech,
+              white: { name: nameW, elo: cleanElo(eloW), pts: ptsW },
+              black: { name: nameB, elo: cleanElo(eloB), pts: ptsB },
+              result: formatResult(res)
             });
-
-            if (parsedMatches.length > 0) {
-                document.getElementById('tourneyTitle').textContent = titleText;
-                document.getElementById('roundInfo').textContent = roundText;
-                matchesData = parsedMatches;
-                
-                if (!displayTimer) {
-                    currentIndex = 0;
-                    renderNextMatch();
-                    startLoop();
-                }
-            }
+          }
         }
+      });
 
-        function loadFallbackData() {
-            document.getElementById('tourneyTitle').textContent = "5e Open d'Automne d'Ajaccio";
-            document.getElementById('roundInfo').textContent = "Résultats de la ronde 1";
-            matchesData = [
-                { board: "1", whitePts: "0", whiteName: "RATIER-FONTANA Matteo", whiteElo: "2214 F", result: "1 - 0", blackName: "PANTALACCI Antoine Marie", blackElo: "1497 F", blackPts: "0" },
-                { board: "2", whitePts: "0", whiteName: "CASTRO PINTO Miguel Angelo", whiteElo: "1436 F", result: "0 - 1", blackName: "UTRERA Ludovic", blackElo: "2153 F", blackPts: "0" },
-                { board: "3", whitePts: "0", whiteName: "CRISTOFARI Antoine", whiteElo: "2053 F", result: "1 - 0", blackName: "BOULANGER Capucine", blackElo: "1432 F", blackPts: "0" },
-                { board: "4", whitePts: "0", whiteName: "MACHECOURT Teano", whiteElo: "1431 F", result: "0 - 1", blackName: "APPIETTO Andria", blackElo: "1962 F", blackPts: "0" },
-                { board: "5", whitePts: "0", whiteName: "PARIS Romain", whiteElo: "1951 F", result: "1 - 0", blackName: "FRANCHI Ange Marie", blackElo: "1421 F", blackPts: "0" }
-            ];
-            renderNextMatch();
-            startLoop();
+      if (newGames.length > 0) {
+        gamesData = newGames;
+        document.getElementById('boardCount').textContent = `${gamesData.length} Échiquiers`;
+        updateTickerUI();
+      } else if (gamesData.length === 0) {
+        loadFallbackDemoData();
+      }
+    }
+
+    // Nettoyer le format des Elo
+    function cleanElo(eloStr) {
+      if (!eloStr) return "";
+      return eloStr.replace(/\s*[FEN]/g, '').trim();
+    }
+
+    // Nettoyer les noms de joueurs
+    function cleanPlayerName(str) {
+      if (!str) return "Joueur Inconnu";
+      return str.replace(/\s+/g, ' ').trim();
+    }
+
+    // Formater le résultat pour l'affichage TV
+    function formatResult(res) {
+      if (!res || res === "X" || res.includes("&nbsp;") || res.trim() === "") return "VS";
+      if (res === "1 - 0" || res === "1-0") return "1 — 0";
+      if (res === "0 - 1" || res === "0-1") return "0 — 1";
+      if (res === "½ - ½" || res === "1/2-1/2" || res === "1/2 - 1/2" || res === "X-X") return "½ — ½";
+      return res;
+    }
+
+    // Mettre à jour les cartes HTML dans le viewport
+    function updateTickerUI() {
+      const viewport = document.getElementById('tickerViewport');
+      viewport.innerHTML = '';
+
+      if (gamesData.length === 0) return;
+
+      gamesData.forEach((game, idx) => {
+        const card = document.createElement('div');
+        card.className = `ticker-card ${idx === 0 ? 'active' : ''}`;
+        card.id = `card-${idx}`;
+
+        card.innerHTML = `
+          <!-- ÉCHIQUIER BADGE -->
+          <div class="flex items-center gap-2 min-w-[90px]">
+            <span class="text-amber-400/70 font-bold text-xs uppercase tracking-wider">ÉCH.</span>
+            <span class="gold-bg text-black font-black text-xl px-2.5 py-0.5 rounded-lg shadow-md">${game.board}</span>
+          </div>
+
+          <!-- JOUEUR BLANCS -->
+          <div class="flex-1 flex items-center justify-end gap-3 text-right pr-4 border-r border-slate-800">
+            <div>
+              <div class="text-white font-bold text-base tracking-tight leading-none">${game.white.name}</div>
+              <div class="text-slate-400 text-xs font-semibold mt-1">
+                <span class="text-amber-400/90 font-mono">${game.white.elo} ELO</span> 
+                <span class="mx-1 opacity-40">•</span> 
+                <span class="text-slate-300 font-bold">${game.white.pts} pts</span>
+              </div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-900 font-black text-sm flex items-center justify-center shadow-inner shrink-0 border-2 border-white">
+              B
+            </div>
+          </div>
+
+          <!-- RÉSULTAT / SCORE CENTRAL -->
+          <div class="px-6 flex flex-col items-center justify-center min-w-[120px]">
+            <div class="bg-slate-900 border border-amber-500/40 px-4 py-1.5 rounded-xl shadow-lg">
+              <span class="text-amber-300 font-black text-lg tracking-wider">${game.result}</span>
+            </div>
+          </div>
+
+          <!-- JOUEUR NOIRS -->
+          <div class="flex-1 flex items-center justify-start gap-3 text-left pl-4 border-l border-slate-800">
+            <div class="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-black text-sm flex items-center justify-center border border-amber-500/40 shadow-inner shrink-0">
+              N
+            </div>
+            <div>
+              <div class="text-white font-bold text-base tracking-tight leading-none">${game.black.name}</div>
+              <div class="text-slate-400 text-xs font-semibold mt-1">
+                <span class="text-slate-300 font-bold">${game.black.pts} pts</span>
+                <span class="mx-1 opacity-40">•</span> 
+                <span class="text-amber-400/90 font-mono">${game.black.elo} ELO</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        viewport.appendChild(card);
+      });
+
+      currentIndex = 0;
+      restartAnimation();
+    }
+
+    // Gestionnaire de la boucle d'animation verticale pas-à-pas
+    function restartAnimation() {
+      if (slideTimer) clearInterval(slideTimer);
+      if (gamesData.length <= 1) return;
+
+      slideTimer = setInterval(() => {
+        const total = gamesData.length;
+        const currentCard = document.getElementById(`card-${currentIndex}`);
+        
+        const nextIndex = (currentIndex + 1) % total;
+        const nextCard = document.getElementById(`card-${nextIndex}`);
+
+        if (currentCard && nextCard) {
+          currentCard.classList.remove('active');
+          currentCard.classList.add('exit');
+
+          nextCard.classList.remove('exit');
+          nextCard.classList.add('active');
+
+          setTimeout(() => {
+            currentCard.classList.remove('exit');
+          }, 600);
+
+          currentIndex = nextIndex;
         }
+      }, displayDuration);
+    }
 
-        // Affichage du match suivant avec animation
-        function renderNextMatch() {
-            if (matchesData.length === 0) return;
-
-            const viewport = document.getElementById('cardViewport');
-            const match = matchesData[currentIndex];
-
-            // Formater le résultat si vide
-            let resultDisplay = match.result;
-            if (!resultDisplay || resultDisplay === " - " || resultDisplay === "0 - 0") {
-                resultDisplay = `<span class="score-empty">VS</span>`;
-            }
-
-            const cardHtml = `
-                <div class="match-card" id="card-${currentIndex}">
-                    <div class="board-badge">
-                        <span class="board-label">Ech.</span>
-                        <span class="board-number">${match.board}</span>
-                    </div>
-
-                    <div class="player-box white">
-                        <div class="player-name">${match.whiteName}</div>
-                        <div class="player-meta">
-                            <span class="pts-tag">${match.whitePts} pt${match.whitePts > 1 ? 's' : ''}</span>
-                            <span class="elo-tag">${match.whiteElo}</span>
-                        </div>
-                    </div>
-
-                    <div class="score-box">
-                        ${resultDisplay}
-                    </div>
-
-                    <div class="player-box black">
-                        <div class="player-name">${match.blackName}</div>
-                        <div class="player-meta">
-                            <span class="elo-tag">${match.blackElo}</span>
-                            <span class="pts-tag">${match.blackPts} pt${match.blackPts > 1 ? 's' : ''}</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // Supprimer la carte sortante s'il y en a une
-            const oldCard = viewport.querySelector('.match-card.active');
-            if (oldCard) {
-                oldCard.classList.remove('active');
-                oldCard.classList.add('exit');
-                setTimeout(() => oldCard.remove(), 500);
-            }
-
-            // Ajouter la nouvelle carte
-            viewport.insertAdjacentHTML('beforeend', cardHtml);
-            const newCard = document.getElementById(`card-${currentIndex}`);
-            
-            // Déclencher l'animation d'entrée
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    newCard.classList.add('active');
-                });
-            });
-
-            // Passer à l'échiquier suivant
-            currentIndex = (currentIndex + 1) % matchesData.length;
-        }
-
-        function startLoop() {
-            if (displayTimer) clearInterval(displayTimer);
-            // Change d'échiquier toutes les 4.5 secondes
-            displayTimer = setInterval(renderNextMatch, 4500);
-        }
-
-        // Démarrage initial
-        fetchFFEData();
-
-        // Actualisation automatique des données FFE toutes les 45 secondes en arrière-plan
-        fetchTimer = setInterval(fetchFFEData, 45000);
-    </script>
+    // Données de démonstration si le réseau FFE est temporairement indisponible
+    function loadFallbackDemoData() {
+      gamesData = [
+        { board: "1", white: { name: "RATIER-FONTANA Matteo", elo: "2214", pts: "0" }, black: { name: "PANTALACCI Antoine Marie", elo: "1497", pts: "0" }, result: "1 — 0" },
+        { board: "2", white: { name: "CASTRO PINTO Miguel Angelo", elo: "1436", pts: "0" }, black: { name: "UTRERA Ludovic", elo: "2153", pts: "0" }, result: "0 — 1" },
+        { board: "3", white: { name: "CRISTOFARI Antoine", elo: "2053", pts: "0" }, black: { name: "BOULANGER Capucine", elo: "1432", pts: "0" }, result: "1 — 0" },
+        { board: "4", white: { name: "MACHECOURT Teano", elo: "1431", pts: "0" }, black: { name: "APPIETTO Andria", elo: "1962", pts: "0" }, result: "0 — 1" },
+        { board: "5", white: { name: "PARIS Romain", elo: "1951", pts: "0" }, black: { name: "FRANCHI Ange Marie", elo: "1421", pts: "0" }, result: "1 — 0" }
+      ];
+      document.getElementById('boardCount').textContent = `${gamesData.length} Échiquiers (R1)`;
+      updateTickerUI();
+    }
+  </script>
 </body>
 </html>
