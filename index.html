@@ -6,9 +6,8 @@
     <title>Bannière Échecs Rotative - Capechecs</title>
     <style>
         :root {
-            /* FOND NOIR */
-            --bg-color: #000000;
-            --card-bg: #000000;
+            /* COULEURS DES BANNIÈRES */
+            --banner-bg: #000000;
             --card-border: #333333;
             
             /* COULEURS TEXTE & ACCENTS */
@@ -24,15 +23,16 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
+        /* FOND DE PAGE GLOBAL TRANSPARENT */
         body, html {
             width: 100%;
             height: 100%;
-            background-color: var(--bg-color) !important;
+            background-color: transparent !important;
             overflow: hidden;
             color: var(--text-primary);
         }
 
-        /* Conteneur principal */
+        /* Conteneur principal transparent */
         .banner-container {
             width: 100%;
             height: 100%;
@@ -41,11 +41,11 @@
             justify-content: center;
             align-items: center;
             padding: 10px;
-            background: #000000;
+            background: transparent;
             position: relative;
         }
 
-        /* En-tête du tournoi */
+        /* En-tête du tournoi (FOND NOIR) */
         .tournament-header {
             width: 100%;
             max-width: 950px;
@@ -54,9 +54,10 @@
             align-items: center;
             padding: 6px 16px;
             margin-bottom: 8px;
-            background: #000000;
+            background: var(--banner-bg);
             border: 1px solid var(--card-border);
             border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         .tournament-title {
@@ -73,18 +74,19 @@
             color: var(--text-secondary);
         }
 
-        /* Cadre général de la bannière */
+        /* Cadre général de la bannière (FOND NOIR) */
         .main-banner-frame {
             width: 100%;
             max-width: 950px;
             height: 90px;
-            background: #000000;
+            background: var(--banner-bg);
             border: 1px solid var(--card-border);
             border-radius: 10px;
             display: flex;
             align-items: center;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         /* Fenêtre de défilement pour les cartes */
@@ -97,14 +99,14 @@
             overflow: hidden;
         }
 
-        /* Carte de jeu défilante */
+        /* Carte de jeu défilante (FOND NOIR) */
         .match-card {
             width: 100%;
             height: 100%;
             position: absolute;
             top: 0;
             left: 0;
-            background: #000000;
+            background: var(--banner-bg);
             display: grid;
             grid-template-columns: 70px 1fr 100px 1fr;
             align-items: center;
@@ -222,7 +224,7 @@
             letter-spacing: 0;
         }
 
-        /* LOGO STRICTEMENT STATIQUE (Immobile à droite) */
+        /* LOGO STATIQUE (FOND NOIR) */
         .static-logo-box {
             position: absolute;
             right: 15px;
@@ -234,7 +236,7 @@
             align-items: center;
             border-left: 1px solid #222222;
             padding-left: 12px;
-            background: #000000;
+            background: var(--banner-bg);
             z-index: 10;
         }
 
@@ -245,40 +247,46 @@
             border: 1px solid #444444;
         }
 
-        /* Panneau de configuration (Bouton ⚙) */
+        /* Bouton de configuration (⚙ Réglages) */
         .config-toggle {
             position: fixed;
-            top: 5px;
-            right: 5px;
-            background: #111111;
-            color: #fff;
-            border: 1px solid var(--card-border);
-            border-radius: 4px;
-            padding: 4px 10px;
-            font-size: 0.75rem;
+            top: 8px;
+            right: 8px;
+            background: var(--accent-gold);
+            color: #000000;
+            border: 1px solid #ffffff;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
             cursor: pointer;
-            z-index: 1000;
-            opacity: 0.5;
-            transition: opacity 0.2s;
+            z-index: 9999;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
         }
 
-        .config-toggle:hover { opacity: 1; }
+        .config-toggle:hover {
+            background: #ffffff;
+            color: #000000;
+        }
 
+        /* Panneau de configuration */
         .config-panel {
             display: none;
             position: fixed;
-            top: 35px;
-            right: 5px;
+            top: 45px;
+            right: 8px;
             background: #111111;
-            border: 1px solid var(--card-border);
-            padding: 15px;
+            border: 2px solid var(--accent-gold);
+            padding: 16px;
             border-radius: 8px;
-            z-index: 999;
-            width: 340px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.9);
+            z-index: 9998;
+            width: 350px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.95);
         }
 
-        .config-panel.open { display: block; }
+        .config-panel.open {
+            display: block;
+        }
 
         .config-group {
             margin-bottom: 12px;
@@ -289,7 +297,7 @@
             font-size: 0.75rem;
             font-weight: bold;
             margin-bottom: 4px;
-            color: var(--text-secondary);
+            color: #ffffff;
         }
 
         .config-panel input {
@@ -297,31 +305,32 @@
             padding: 8px;
             background: #000000;
             border: 1px solid var(--card-border);
-            color: #fff;
+            color: #ffffff;
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
 
         .config-panel button {
             background: var(--accent-gold);
-            color: #000;
+            color: #000000;
             border: none;
-            padding: 8px 12px;
-            font-weight: 700;
+            padding: 10px 12px;
+            font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
-            margin-top: 5px;
+            margin-top: 8px;
+            font-size: 0.85rem;
         }
 
         .config-panel button:hover {
-            opacity: 0.9;
+            background: #ffffff;
         }
     </style>
 </head>
 <body>
 
-    <!-- Bouton Réglages -->
+    <!-- Bouton Réglages visible en haut à droite -->
     <button class="config-toggle" onclick="toggleConfig()">⚙ Réglages</button>
     
     <!-- Panneau Réglages -->
@@ -431,8 +440,6 @@
             }
 
             toggleConfig();
-            
-            // Relancer immédiatement la boucle avec le nouveau temps de rotation
             startLoop();
             renderNextMatch();
         }
@@ -599,7 +606,7 @@
             displayTimer = setInterval(renderNextMatch, displayDuration);
         }
 
-        // Lancement initial
+        // Démarrage initial
         fetchFFEData();
         fetchTimer = setInterval(fetchFFEData, fetchInterval);
     </script>
