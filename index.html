@@ -1,480 +1,528 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bandeau Résultats Échecs vMix - CAPECHECS</title>
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome / Phosphor Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bannière Échecs Rotative - Capechecs</title>
+    <style>
+        :root {
+            /* FOND NOIR */
+            --bg-color: #000000;
+            --card-bg: #000000;
+            --card-border: #333333;
+            
+            /* COULEURS TEXTE & ACCENTS */
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --accent-gold: #f59e0b;
+            --score-win: #22c55e;
+            --score-draw: #eab308;
+        }
 
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background-color: transparent;
-      overflow: hidden;
-      margin: 0;
-      padding: 0;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    /* Style du conteneur de défilement */
-    .ticker-viewport {
-      height: 100%;
-      overflow: hidden;
-      position: relative;
-    }
+        body, html {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color) !important;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
 
-    /* Animation pas-à-pas verticale */
-    .ticker-card {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      top: 0;
-      left: 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      opacity: 0;
-      transform: translateY(100%);
-      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease-in-out;
-      pointer-events: none;
-    }
+        /* Conteneur principal */
+        .banner-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            background: #000000;
+            position: relative;
+        }
 
-    .ticker-card.active {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
-    }
+        /* En-tête du tournoi */
+        .tournament-header {
+            width: 100%;
+            max-width: 950px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 16px;
+            margin-bottom: 8px;
+            background: #000000;
+            border: 1px solid var(--card-border);
+            border-radius: 8px;
+        }
 
-    .ticker-card.exit {
-      opacity: 0;
-      transform: translateY(-100%);
-    }
+        .tournament-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    /* Gradient or/doré spécial Capechecs */
-    .gold-gradient-text {
-      background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+        .tournament-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
 
-    .gold-bg {
-      background: linear-gradient(135deg, #BF953F 0%, #E6C670 50%, #AA771C 100%);
-    }
+        .round-info {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
 
-    /* Masquer le panneau de config en mode overlay propre */
-    .config-panel {
-      transition: transform 0.3s ease, opacity 0.3s ease;
-    }
-    .config-panel.collapsed {
-      transform: translateY(-110%);
-      opacity: 0.2;
-    }
-    .config-panel.collapsed:hover {
-      opacity: 1;
-    }
-  </style>
+        /* Fenêtre de défilement de la carte */
+        .card-viewport {
+            width: 100%;
+            max-width: 950px;
+            height: 90px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Carte de jeu */
+        .match-card {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #000000;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: 70px 1fr 100px 1fr 70px;
+            align-items: center;
+            padding: 0 15px;
+            opacity: 0;
+            transform: translateY(100%);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .match-card.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .match-card.exit {
+            opacity: 0;
+            transform: translateY(-100%);
+        }
+
+        /* Numéro d'échiquier */
+        .board-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #111111;
+            border: 1px solid var(--accent-gold);
+            border-radius: 6px;
+            padding: 6px 4px;
+            color: var(--accent-gold);
+            font-weight: 800;
+        }
+
+        .board-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .board-number {
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        /* Blocs joueurs (Blancs / Noirs) */
+        .player-box {
+            display: flex;
+            flex-direction: column;
+            padding: 0 12px;
+        }
+
+        .player-box.white {
+            text-align: right;
+            border-right: 1px solid #222222;
+        }
+
+        .player-box.black {
+            text-align: left;
+            border-left: 1px solid #222222;
+        }
+
+        .player-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .player-box.white .player-meta {
+            justify-content: flex-end;
+        }
+
+        .elo-tag {
+            background: #222222;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .pts-tag {
+            color: var(--accent-gold);
+            font-weight: 600;
+        }
+
+        /* Bloc Score / Résultat Central */
+        .score-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: #111111;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--card-border);
+            color: var(--accent-gold);
+            letter-spacing: 1px;
+        }
+
+        .score-empty {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0;
+        }
+
+        /* Conteneur Logo Droite */
+        .logo-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .logo-box img {
+            max-height: 65px;
+            width: auto;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
+        /* Panneau de configuration */
+        .config-toggle {
+            position: fixed;
+            top: 5px;
+            right: 5px;
+            background: #111111;
+            color: #fff;
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 1000;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .config-toggle:hover { opacity: 1; }
+
+        .config-panel {
+            display: none;
+            position: fixed;
+            top: 30px;
+            right: 5px;
+            background: #111111;
+            border: 1px solid var(--card-border);
+            padding: 12px;
+            border-radius: 8px;
+            z-index: 999;
+            width: 320px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+        }
+
+        .config-panel.open { display: block; }
+
+        .config-panel input {
+            width: 100%;
+            padding: 6px;
+            margin: 6px 0 10px 0;
+            background: #000000;
+            border: 1px solid var(--card-border);
+            color: #fff;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .config-panel button {
+            background: var(--accent-gold);
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            font-weight: 700;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
 </head>
-<body class="h-screen w-screen flex flex-col justify-end p-2 select-none">
+<body>
 
-  <!-- PANNEAU DE CONFIGURATION (Rétractable) -->
-  <div id="configPanel" class="config-panel fixed top-2 left-2 right-2 z-50 bg-slate-900/95 text-white p-3 rounded-xl border border-amber-500/30 shadow-2xl backdrop-blur-md text-xs flex flex-wrap gap-3 items-center justify-between">
-    <div class="flex items-center gap-2 font-bold text-amber-400">
-      <i class="fa-solid fa-gear text-sm"></i>
-      <span>Configuration Live FFE</span>
-    </div>
-
-    <div class="flex-1 min-w-[300px] flex gap-2">
-      <input type="text" id="ffeUrlInput" 
-             value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01" 
-             placeholder="Coller l'URL FFE de la ronde ici..." 
-             class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-1.5 text-white focus:outline-none focus:border-amber-400 font-mono">
-      <button onclick="updateSource()" class="gold-bg text-black font-bold px-4 py-1.5 rounded hover:brightness-110 transition">
-        Charger
-      </button>
-    </div>
-
-    <div class="flex items-center gap-4">
-      <label class="flex items-center gap-1.5 cursor-pointer">
-        <span class="text-slate-400">Durée/Carte:</span>
-        <input type="number" id="durationInput" value="5" min="2" max="20" class="w-12 bg-slate-800 border border-slate-700 rounded text-center py-1 text-amber-300">
-        <span class="text-slate-400">sec</span>
-      </label>
-
-      <div class="flex items-center gap-2 border-l border-slate-700 pl-3">
-        <span id="statusIndicator" class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="statusText" class="text-slate-300">Connexion...</span>
-      </div>
-
-      <button onclick="toggleConfig()" class="text-slate-400 hover:text-white ml-2" title="Masquer le panneau">
-        <i class="fa-solid fa-chevron-up text-base"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- BOUTON RE-OUVERTURE CONFIG SI MASQUÉ -->
-  <button id="openConfigBtn" onclick="toggleConfig()" class="fixed top-2 right-2 z-40 bg-slate-900/80 text-amber-400 p-2 rounded-lg border border-amber-500/30 text-xs hidden hover:bg-slate-900">
-    <i class="fa-solid fa-gear"></i> URL FFE
-  </button>
-
-  <!-- BANDEAU / RUBAN PRINCIPAL INFOS (Fit dans le cadre "Infos" bas) -->
-  <div class="w-full h-24 bg-slate-950/95 border-2 border-amber-500/50 rounded-2xl shadow-2xl flex items-center overflow-hidden relative backdrop-blur-sm">
+    <button class="config-toggle" onclick="toggleConfig()">⚙ Configuration URL</button>
     
-    <!-- Étiquette gauche "RONDE LIVE" -->
-    <div class="h-full px-6 bg-amber-500/10 border-r border-amber-500/30 flex flex-col justify-center items-center min-w-[130px] shrink-0">
-      <span class="text-amber-400 font-black text-xs tracking-widest uppercase">RONDE LIVE</span>
-      <span id="boardCount" class="text-white/60 text-[10px] font-semibold mt-0.5">Chargement...</span>
+    <div class="config-panel" id="configPanel">
+        <label style="font-size: 0.75rem; font-weight: bold;">URL FFE de la Ronde :</label>
+        <input type="text" id="ffeUrlInput" value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01">
+        <button onclick="updateUrl()">Mettre à jour la ronde</button>
     </div>
 
-    <!-- ZONE D'ANIMATION DE DÉFILEMENT (VIEWPORT) -->
-    <div class="flex-1 h-full relative px-6" id="tickerViewport">
-      
-      <!-- État d'attente/chargement -->
-      <div id="loadingState" class="absolute inset-0 flex items-center justify-center gap-3 text-amber-400/80">
-        <i class="fa-solid fa-circle-notch animate-spin text-xl"></i>
-        <span class="font-bold text-sm tracking-wide">Récupération des données FFE en cours...</span>
-      </div>
-
-    </div>
-
-    <!-- LOGO / DECO DROITE -->
-    <div class="h-full px-5 border-l border-amber-500/20 flex items-center justify-center shrink-0 bg-slate-900/50">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-chess-king text-2xl text-amber-400"></i>
-        <div class="text-left hidden lg:block">
-          <div class="font-black text-xs text-white leading-none">CAPECHECS</div>
-          <div class="text-[9px] text-amber-400/80 tracking-wider font-semibold">CAP D'AGDE</div>
+    <div class="banner-container">
+        <!-- En-tête -->
+        <div class="tournament-header">
+            <div class="tournament-title-group">
+                <div class="tournament-title" id="tourneyTitle">Chargement de la ronde...</div>
+            </div>
+            <div class="round-info" id="roundInfo">FFE Live</div>
         </div>
-      </div>
+
+        <!-- Zone d'affichage rotative -->
+        <div class="card-viewport" id="cardViewport">
+            <!-- La carte active sera générée dynamiquement ici -->
+        </div>
     </div>
 
-  </div>
+    <script>
+        // Logo Capechecs encodé en base64
+        const capechecsLogo = "data:image/png;base64,/9j/4AAQSkZJRgABAgEBLAEsAAD/7QAsUGhvdG9zaG9wIDMuMAA4QklNA+0AAAAAABABLAAAAAEAAQEsAAAAAQAB/+FIGWh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8APD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4KPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgNy4xLWMwMDAgNzkuY2I3YzVhMSwgMjAyMi8wNC8xNC0wNToyMjozNSAgICAgICAgIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6ZGM9Imh0dHA6Ly9wdXJsLm9yZy9kYy9lbGVtZW50cy8xLjEvIgogICAgICAgICAgICB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iCiAgICAgICAgICAgIHhtbG5zOnhtcEdJbWc9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9nL2ltZy8iCiAgICAgICAgICAgIHhtbG5zOnhtcE1NPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvbW0vIgogICAgICAgICAgICB4bWxuczpzdFJlZj0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL3NUeXBlL1Jlc291cmNlUmVmIyIKICAgICAgICAgICAgeG1sbnM6c3RFdnQ9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZUV2ZW50IyIKICAgICAgICAgICAgeG1sbnM6aWxsdXN0cmF0b3I9Imh0dHA6Ly9ucy5hZG9iZS5jb20vaWxsdXN0cmF0b3IvMS4wLyIKICAgICAgICAgICAgeG1sbnM6cGRmPSJodHRwOi8vbnMuYWRvYmUuY29tL3BkZi8xLjMvIj4KICAgICAgICAgPGRjOmZvcm1hdD5pbWFnZS9qcGVnPC9kYzpmb3JtYXQ+CiAgICAgICAgIDxkYzp0aXRsZT4KICAgICAgICAgICAgPHJkZjpBbHQ+CiAgICAgICAgICAgICAgIDxyZGY6bGkgeG1sOmxhbmc9IngtZGVmYXVsdCI+UHJpbnQ8L3JkZjpsaT4KICAgICAgICAgICAgPC9yZGY6QWx0PgogICAgICAgICA8L2RjOnRpdGxlPgogICAgICAgICA8eG1wOk1ldGFkYXRhRGF0ZT4yMDIyLTA3LTMxVDEyOjU0OjQyKzAyOjAwPC94bXA6TWV0YWRhdGFEYXRlPgogICAgICAgICA8eG1wOk1vZGlmeURhdGU+MjAyMi0wNy0zMVQxMDo1NDo0OFo8L3htcDpNb2RpZnlEYXRlPgogICAgICAgICA8eG1wOkNyZWF0ZURhdGU+MjAyMi0wNy0zMVQxMjo1NDo0MiswMjowMDwveG1wOkNyZWF0ZURhdGU+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSWxsdXN0cmF0b3IgMjYuMyAoTWFjaW50b3NoKTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8eG1wOlRodW1ibmFpbHM+CiAgICAgICAgICAgIDxyZGY6QWx0PgogICAgICAgICAgICAgIHN0UmVmOmluc3RhbmNlSUQ+eG1wLmlpZDpmZTI3NDYwMi03N2I2LTRmYjgtOTYzYy0yNDM0YTNlZmFmYmQ8L3N0UmVmOmluc3RhbmNlSUQ+CiAgICAgICAgICAgIDxzdFJlZjpkb2N1bWVudElEPnhtcC5kaWQ6ZmUyNzQ2MDItNzdiNi00ZmI4LTk2M2MtMjQ3NGEzZWZhZmJkPC9zdFJlZjpkb2N1bWVudElEPgogICAgICAgICAgICA8c3RSZWY6b3JpZ2luYWxEb2N1bWVudElEPnV1aWQ6NUQyMDg5MjQ5M0JGREIxMTkxNEE4NTkwRDMxNTA4Qzg8L3htcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD4KICAgICAgICAgICAgPHN0UmVmOnJlbmRpdGlvbkNsYXNzPnByb29mOnBkZjwveG1wTU06UmVuZGl0aW9uQ2xhc3M+CiAgICAgICAgIDwveG1wTU06RGVyaXZlZEZyb20+CiAgICAgICAgIDx4bXBNTTpIaXN0b3J5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1L4aO78f/ANf8x3/m93f9z6fagH3P/mbfm28v3f3fXtvx93f4/X327e/8IAP/AOY3b/A/m7/zbfX37ff/AP4f0e0AHa6n19/f2x6u23/a3x2/4fb39Pfj4+0B+34/z277/X/X+r/1fb29/o++33f5QA/f/v7bfR932x/e2222z9O222/t2/GAm25n0b7+/X3f4vp/CAATfptts++2/fX2/X29vf/Xv/ALv/ALpAATbfP8/X33/4/m98AE73/v5vv9+ff4/t9m3u/f8AT4gAJ/8AG/f+/t98An9v9+f3++9e32+n2/m9/b1AAR5ej5Pl/Vfz/r/M4/8Ap3538X+XP3Nttv4e33bfT9P339H3/F+kAAn+vA3/AH+/X83sAJ/bf0bfm23v7+2fbttv9Of3e34vXmAP2bfT+v/i3++/3++AB9v0fg+j/L/f+H0bf1ACff2f0bbfmbfj752+309/V+L74ACf/i23/L++/1/93b22/f8AAn8e/f4f1+82/l+37ff8wA/0f4/X333+/v/H7/v29/X7/m3AAn27fp9v1/wD39v4e3+UAF+3bb+fv+H/j3f3/AAe3f/d2994An+/f3ff39/aAH3++231+r1bfvv8A/L/X9++f09sAn2+/f2d/9/v74/m/j3/i98AB/f8Avt+/f0b/AL98fgAE2/i2/p39vftv39/3d+nb6fU/i9m335+/4m339v2An9vf1++3bb3+9u/7m23u+/e9/j+23uAJ/P4vt+/b936f3323AAn+76/V6vfjbb39/v8Aj7a++3239e3v39AAT2+/19vf6du2/fb48fgAnx532299tvX3fX+Ptv3+jb7bACN/v/u+/A3++/4/jACfX9v93e/a2/b3e+ffv/X/AL/X7AAn9v8AZ6e/b/i3/j39/wBv0AN99t+/f6vf/G/e76+/v/d3+/7f4vX6wARv+H/S/d/H9/d77+3u/U/k995vvv3AAnf3fvf9/e/Tf39vf+L6vbv8f09vf8A3gAJt7f123+nbfbb39vv2+9ACf6P130+n/t7bfm++/dACfj29f4vp229f3+/X4NvxAG+30b/AHd+9+30+rt9G+22++/ff9+/p/EAEbbfv19/t2/H9Pf92/s9/Xv6AB1L4aO78f/1/zHf+b3d/3Pp9qAfc/+Zt+LzO383t93fX4/Xv6++3sAn0fX32/p2/f/E/34AAd9m/d9O2/fX29X1bff7u/u9G3p3+/f/f4gAfj6Pvf4vx/x5223AAn4vX+33383t6vf4vg+/8Aj+D2bbf3fB2++mAn/i9/07f8v1AAT9v6ffXvf/j3/CAn+j0bf/4/d8f+vf3gAE/3+m33e38ff9ff1gAIf0+n32/f3/d33AE9Xq/C79/Xttv/AN/bf1ACNvpvtttv3+fb+Lt3/EAB33+Pbb3++/v2+P7e/b6fp/x9gB32bf/4vx+/8f3/b4d+/wA/eAIn/X2/2fb9P0e36foAn+/6fb4e/v2+j7f5AAG+/v25+rtvv+3e++2/v9v4v98AB/S78bff07/vf0/e2AIn/d+m/vb+/wDH3323+/u3AATf422930777e36O/f8Xbf4/j5m+/4v39/vAn3+/s9Xv6du+/wCAAfj2/f/m7fHvv++/b/d74AN/m+n/AJv0AAR5m337/N23/X93/f3sAE/v2/H27fze23p/a3AAn/p23++307bfz9/t8f4vjAEf6ff4vxfyfp3227/x/wAAAf17e/p22/j/ANff29/Xv6AB9G/vv7+/e/f7e/d33/h7e4A/o++ff9u3bf8A/I/a+/6fpAEe3b2+f8fv3+34O2wA/T++/3+/9/6P05+7sABOz/i9vufR6tvx7e/mAH/A/H3fT6v/AHf4v0++/AHf337f7X2+Pv79u+2/3/f9P/SAAt+72379t/p/1/R9m+/v+4AH+9t+/wBO3q98fj9fb6fUgAB/L23/AH/4fp239vv39+wA3f1er0f8v1/8vr++/p93vwAI33379+307d9e3fv/AG/1er3fg3/D83eACfv3bbX07bfXtt7fTv9/0bbfz9vf/eAE75x9/ft33+/u3/m3/A398APf29ff7fj3/F9P/P/AJ/58ACd/q2239vffb3+ff1bb99v4+39+AAn0/l3/f49t/8Ah224A/ft7vV+H6e/f3fpt6+/4O//AC5gB9+329e31/5P7/D299v4ft4AD0bb/m7bfd+/fj/jAn9vv+LbfbfX4e+2/e3f/d2/zfhAN19vf93bfv27fTtv3+P8A3/H37+38sAB/d3bfvf5e34Nvv/H9/tAE7577e3bfbb0//X/5/b/G23v/ABAEf6/d/p7bff6fh7bf5fX48/XvvAIn49/d9fvvfXv7e+/f830evb1f4O/4/T4wBJ/b7d/v/wAv1fTv+Pv2++/tAN/Xvv9e+3f+/fp/H8H8mAAAd/i7a++/4vf0bb+n6/s/m3++ADf/AAer0b/5ttvv3++/o9/X8fo29+/4gA07f3bb+rf8O+23v7+vf1f4v0ff6O+AIn1/j9vfbfv/AIvh9vf337bf/a3vAEn/AH+9tt/i/J9319/W/i/p7b+mAN9m33bb+/f9349/f3398ABf0e3fXf399/fXv9P/AC/X7gAAn6Nu+/v6vf4++/4u/s/Xv/N9/eAEbfm233+/9Pfv/f8A09u+/fP8/q7AE7vX3v298b/Xv9ff0/s9e3d93fgAPv6vX4vwev8AZ3/f+30f9X3f3/UAB92/s9e+9v0bbft++/a39Xq9XfgAJ9m/f3223++/5f0ffvv3++/HAnf5u/vf4/S/N93fbft+m4Anc9vf37f5O23v933ff22AAn8++//AH9tvV9vb/E3v277ffAnv7fbbX0bfi9/4/d3+Pf/ACd/j9m4An4+n7O2/fX2bfvfR237b6/iAJ93fbb6f3+31+vv37fTv9m4A/n+vf8Af6fp9/U9Xfttv9/d++338/pACPT6+2+/4+34u/tAE+/X/L/1e/sABPr/AH+n2+/ff+3/AN/t37/DAn4++/ftt9/t3fXvv+Hffvv++/1AATv++23f9e9vf2/9v4vf6f09/X+P0ff+H3+kAjv9nv8Av/a3++/v++238++/0gD42++/fb/z/ft3v4fp/wCO4AD/AE29/d3bf5dv0/X2f5++f+QAn8X6e2//AG7fvevfvv23+L8Pq2AEf+f0ev1fb2fT/Fm39O/rAInx+nbbbfvvv3329X4vx9/d9eAEbf322+/bfbf4/pt27/vfX+f+1vugBHm++/bf83u39m33b9+2fxfu+/0ADf77b9/m9Pfv8O3vfvv3/m/l39W+/qAJ2bbbf8vf9f5e3/C/H/m79u+2/pAnf3fS2/fX/L8ft++/0AAJ999tf4vftv9Xv7fg2376AAG3ftv7fp3+/7bfT8ftAn++/t/a39+333x6t/v/jAAdtvu/v33/wAn4ft4/D2+/v8AR6/v6ADs/v3bbvf4vR37e/2++8AJ3++/vfAAn/j930ff9vf6e/f3wAtvvtv7+/t9e9/3+38wAfP0++/AAnbfXbvf3x+9Xv+12+/4+/vfV2m/s+/8uADx/bbfbfX4e+/1fj+/s7ft931+m5AAn99vb4++23vf5fj++/4u/09vx/X2AHf6e+/v++3u+/f19/f3+Pt7/F94Anfb++/fbv8fo3xvvvvv6vf8f+L0An9m231+/29/1/v8AG/d2b+vfAAI99vv6e3x+31/h/S2AIn8++3f+/wD9Pf0b777/AM3e377fAn++93fbfPff/KAHbfb7/wBvf+/8u3+H2fTtn2b/AMmAn++/1+vt239u3u/3/e+/9e3YAT4/3b99vx7e3/m/S/X98AB/bfj9vb1++/d77++/vvwACfe/v39Pf9O+/fbbf++/z/S/AABG23ff1e3v9f0ff7v3vugAt+71bbfX+/m3f0/X4f2/t8X1gAB9e/bfbfP4f0fftv33+/8AJ9PewA3836fv++2/d3v298fp7e307/vAIn/j3bbftt33/H7e/fb199++/f1AAe7++/t+/T239fp3930b/mAn++2++/f5v3fTvt9e++/v/b/AAn0An8++31+3bb/AHvvv8P6fh79/s/f/i4AFvv6vvvf6P3vf1+/m2/v+/099+/f8QAB+/e36Pptvvtv+rt6vfH+/v8Av39eAn+jX4v5Ntvf3wAn4/i2+/v++/0AIny9/bf2+9u+v3b+jbf1e33s++742AB/a3+/5P8An4v0erf9vtv/AIL0gBH/AH/5Ntvb2bfR9Xv+333++33fG9uAIn/v2/y/29vfv/D9u2wAJ9m/x7+/t/m3fX6t/b4v5fj3+f8AjAAt/D3339/T/f6f5Pj++/t7ACNvt++/d/F+/82/mAnfb0/x/mAE36be+/m/4v3/AG/n9vgAJ9/t37+nv/m7a+33++/i++/eAInm/f32bf4fp3725+/+/wB3s++78QIn8/x+/v8Ap33/AH/l/l2/fAn8/wBXbv2/4/R/j/H9vx799vh33An8v8Xv9Pfj+n0/e33+3cAHf3e3v7/5O/3/AE/3/HAn0fxf/X2AAn19/v6v099vh23fX9/s/P8A8+/v4AD7+349t/8Anvv6v3+/ft7/AB9vx29/u3/a/An9/f36d+3f6vf3/H/ft8AAv+L27e/8fv293f3AET9X+Xt9n4e++3/f9ff6fh7/AGAn0+/+/AAT6/f5fp2m/m9e/bb+/wDP++/N++4An/4f3ffvX9v3/i3v6+/vv33x6u3v9Pq3/e2ACd/fttv+L8O+9v4vf93fgAJ37ft27fvvv9e29f8AN9e23/m4AJ8f4vj2+/1+79+9/gAn8u3f+/27/m39X9v9339vf/E3AAj9m/e+/f3+7v8AH/vf4P3+/vAAb0d+3ft++/3+/bbfAn2/b8XvAAN9+/v39fp++30+/wBAAnfXb9vv382/f1++/dAnf36++2+/x/f+/AAn6/f9vX+Pf8f+L5An2bfb37f39u/v8PfvgAf6Pf8Ai/Z+/vv2+/d/E/S7fH9e/vvgAb7f9/8An9/2/SAnm++/bb6fv+j+/vvgAnbf07fvv299+232+An39O36d9vf7/R699sADft7vVtv3+/Xv2+29vf1ff8Av3AET+fX/l++/f3gAR8e2+/5vp+/v+/f4+3f3fgIn0/0e3/DvgA+/p+/v37e/ftv++9v6fvftvgAbX1bbf4vx9vx57/j9f8An53+/wBvw7AAe/1++/Tvvv3++/4+319vg/EACftm23+Pf+/u++/v7wAnb7++/sbfX09/Xvv2AET7e+/6/X/z7e7939vfAAI331++/ft7+rv9e+/v/d3++/b+gAb/f6vvfT29e30+n/t+/6QAR333/d9vbbbb3+/f8Xft8feADs4/f4f/Xvf+/5fp93uAAT99ttvh939/P8AnmAn0f5+3fvtv/199/3ACf0/x+rt2AAnd++/b1+n79/r/wC7bAnfb9+230/vv2/L+rtu37b++/fAET9+3d39/p3/AA7Anff1er1fj7dvwfp9vbf6/U3wAJvv/X+f4ft9Gf4e/vAARt6e/v7+12/p++/ffvgAF9+/3/N++34v8vfgANvv05m3e+L48Anf5O/f3+9vXtv9333ACd9++29u23v/m/3fR9f0gAAnbbbb8e/f3x++3f8fvvwAE9m2/19++99e+/m8ACff29/T3/1+/fgAP/2Q==";
 
-  <script>
-    // Variables globales
-    let gamesData = [];
-    let currentIndex = 0;
-    let slideTimer = null;
-    let refreshTimer = null;
-    let displayDuration = 5000; // 5 secondes par échiquier
-    let currentFfeUrl = "";
-
-    // Démarrage automatique
-    window.addEventListener('DOMContentLoaded', () => {
-      // Détecter si une URL est passée en paramètre URL (?url=...)
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlParam = urlParams.get('url');
-      const durationParam = urlParams.get('duration');
-
-      if (durationParam && !isNaN(durationParam)) {
-        displayDuration = parseInt(durationParam) * 1000;
-        document.getElementById('durationInput').value = durationParam;
-      }
-
-      if (urlParam) {
-        currentFfeUrl = decodeURIComponent(urlParam);
-        document.getElementById('ffeUrlInput').value = currentFfeUrl;
-      } else {
-        currentFfeUrl = document.getElementById('ffeUrlInput').value;
-      }
-
-      // Écouteur pour la durée
-      document.getElementById('durationInput').addEventListener('change', (e) => {
-        displayDuration = Math.max(2, parseInt(e.target.value) || 5) * 1000;
-        restartAnimation();
-      });
-
-      // Lancer la première mise à jour
-      fetchFFEData();
-
-      // Programmer le rafraîchissement automatique FFE en arrière-plan (toutes les 45 secondes)
-      refreshTimer = setInterval(fetchFFEData, 45000);
-    });
-
-    // Masquer / Afficher le panneau de configuration
-    function toggleConfig() {
-      const panel = document.getElementById('configPanel');
-      const btn = document.getElementById('openConfigBtn');
-      panel.classList.toggle('collapsed');
-      if (panel.classList.contains('collapsed')) {
-        btn.classList.remove('hidden');
-      } else {
-        btn.classList.add('hidden');
-      }
-    }
-
-    // Mise à jour de l'URL manuellement depuis l'interface
-    function updateSource() {
-      const inputUrl = document.getElementById('ffeUrlInput').value.trim();
-      if (!inputUrl) return;
-      currentFfeUrl = inputUrl;
-      
-      document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping";
-      document.getElementById('statusText').textContent = "Mise à jour...";
-      
-      fetchFFEData();
-    }
-
-    // Récupération multi-proxys très robuste pour contourner CORS et erreurs serveur
-    async function fetchFFEData() {
-      if (!currentFfeUrl) return;
-
-      const targetUrl = currentFfeUrl;
-
-      // Liste mise à jour de proxys performants
-      const proxies = [
-        {
-          name: "CorsDev",
-          fetch: async (url) => {
-            const res = await fetch(`https://proxy.cors.dev/${url}`, { signal: AbortSignal.timeout(6000) });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return await res.text();
-          }
-        },
-        {
-          name: "CodeTabs",
-          fetch: async (url) => {
-            const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(6000) });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return await res.text();
-          }
-        },
-        {
-          name: "AllOrigins",
-          fetch: async (url) => {
-            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}&ts=${Date.now()}`, { signal: AbortSignal.timeout(6000) });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-            return json.contents;
-          }
-        },
-        {
-          name: "CorsProxy",
-          fetch: async (url) => {
-            const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, { signal: AbortSignal.timeout(6000) });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            return await res.text();
-          }
-        }
-      ];
-
-      let htmlContent = null;
-      let successfulProxy = null;
-
-      for (const proxy of proxies) {
-        try {
-          console.log(`[FFE Fetch] Tentative via ${proxy.name}...`);
-          htmlContent = await proxy.fetch(targetUrl);
-          if (htmlContent && htmlContent.length > 300) {
-            successfulProxy = proxy.name;
-            break;
-          }
-        } catch (err) {
-          console.warn(`[FFE Fetch] Échec avec ${proxy.name}:`, err.message);
-        }
-      }
-
-      if (htmlContent) {
-        console.log(`[FFE Fetch] Succès via ${successfulProxy}!`);
-        parseFFEHtml(htmlContent);
-        document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500";
-        document.getElementById('statusText').textContent = `En direct (${gamesData.length} p.)`;
-      } else {
-        console.warn("[FFE Fetch] Tous les proxys réseau ont échoué. Basculement en mode secours/démo.");
+        // URL FFE par défaut
+        let currentFfeUrl = "https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01";
         
-        // En cas d'échec complet du réseau FFE, utiliser les données courantes ou charger la démo
-        if (gamesData.length === 0) {
-          loadFallbackDemoData();
+        // Liste des proxys pour contourner CORS
+        const corsProxies = [
+            (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`
+        ];
+
+        let matchesData = [];
+        let currentIndex = 0;
+        let displayTimer = null;
+        let fetchTimer = null;
+
+        // Récupérer le paramètre ?url= dans l'adresse si présent
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('url')) {
+            currentFfeUrl = urlParams.get('url');
+            document.getElementById('ffeUrlInput').value = currentFfeUrl;
         }
-        document.getElementById('statusIndicator').className = "inline-block w-2.5 h-2.5 rounded-full bg-amber-500";
-        document.getElementById('statusText').textContent = "Mode Démo / Hors-ligne";
-      }
-    }
 
-    // Parser le tableau HTML retourné par la FFE
-    function parseFFEHtml(htmlString) {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(htmlString, 'text/html');
-      
-      const tables = doc.querySelectorAll('table');
-      let targetTable = null;
-
-      tables.forEach(table => {
-        const text = table.textContent;
-        if (text.includes('Ech.') || text.includes('Pts') || text.includes('Blancs')) {
-          targetTable = table;
+        function toggleConfig() {
+            document.getElementById('configPanel').classList.toggle('open');
         }
-      });
 
-      if (!targetTable) {
-        console.warn("Tableau FFE non trouvé dans le HTML fourni.");
-        if (gamesData.length === 0) loadFallbackDemoData();
-        return;
-      }
+        function updateUrl() {
+            const inputVal = document.getElementById('ffeUrlInput').value.trim();
+            if (inputVal) {
+                currentFfeUrl = inputVal;
+                toggleConfig();
+                fetchFFEData();
+            }
+        }
 
-      const rows = targetTable.querySelectorAll('tr');
-      const newGames = [];
+        // Fonction pour télécharger et parser la page FFE
+        async function fetchFFEData() {
+            let htmlText = "";
+            
+            try {
+                const response = await fetch(corsProxies[0](currentFfeUrl));
+                if (response.ok) {
+                    const data = await response.json();
+                    htmlText = data.contents;
+                }
+            } catch (e) {
+                console.warn("Échec proxy 1, tentative proxy 2...");
+                try {
+                    const response = await fetch(corsProxies[1](currentFfeUrl));
+                    if (response.ok) {
+                        htmlText = await response.text();
+                    }
+                } catch (err) {
+                    console.error("Erreur de récupération réseau :", err);
+                }
+            }
 
-      rows.forEach((row) => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 7) {
-          const ech = cells[0]?.textContent?.trim();
-          
-          if (ech && !isNaN(parseInt(ech))) {
-            const ptsW = cells[1]?.textContent?.trim() || "0";
-            const nameW = cleanPlayerName(cells[2]?.textContent?.trim() || "");
-            const eloW = cells[3]?.textContent?.trim() || "";
-            const res = cells[4]?.textContent?.trim() || "VS";
-            const nameB = cleanPlayerName(cells[5]?.textContent?.trim() || "");
-            const eloB = cells[6]?.textContent?.trim() || "";
-            const ptsB = cells[7]?.textContent?.trim() || "0";
+            if (htmlText) {
+                parseFFEHTML(htmlText);
+            } else if (matchesData.length === 0) {
+                loadFallbackData();
+            }
+        }
 
-            newGames.push({
-              board: ech,
-              white: { name: nameW, elo: cleanElo(eloW), pts: ptsW },
-              black: { name: nameB, elo: cleanElo(eloB), pts: ptsB },
-              result: formatResult(res)
+        // Extraction des données de la table HTML de la FFE
+        function parseFFEHTML(htmlContent) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlContent, 'text/html');
+
+            const tables = doc.querySelectorAll('table');
+            let parsedMatches = [];
+            let titleText = "Capechecs";
+            let roundText = "Résultats";
+
+            tables.forEach(table => {
+                const rows = table.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('td');
+                    
+                    if (cells.length === 1 || cells.length === 8) {
+                        const cellText = row.textContent;
+                        if (cellText.includes('Résultats de la ronde') || cellText.includes('Open')) {
+                            const lines = cellText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                            if (lines.length >= 1) titleText = lines[0];
+                            if (lines.length >= 2) roundText = lines[1];
+                        }
+                    }
+
+                    if (cells.length === 8) {
+                        const boardNum = cells[0].textContent.trim();
+                        if (!isNaN(parseInt(boardNum))) {
+                            parsedMatches.push({
+                                board: boardNum,
+                                whitePts: cells[1].textContent.trim(),
+                                whiteName: cells[2].textContent.trim(),
+                                whiteElo: cells[3].textContent.trim().replace(/\u00a0/g, ' '),
+                                result: cells[4].textContent.trim(),
+                                blackName: cells[5].textContent.trim(),
+                                blackElo: cells[6].textContent.trim().replace(/\u00a0/g, ' '),
+                                blackPts: cells[7].textContent.trim()
+                            });
+                        }
+                    }
+                });
             });
-          }
+
+            if (parsedMatches.length > 0) {
+                document.getElementById('tourneyTitle').textContent = titleText;
+                document.getElementById('roundInfo').textContent = roundText;
+                matchesData = parsedMatches;
+                
+                if (!displayTimer) {
+                    currentIndex = 0;
+                    renderNextMatch();
+                    startLoop();
+                }
+            }
         }
-      });
 
-      if (newGames.length > 0) {
-        gamesData = newGames;
-        document.getElementById('boardCount').textContent = `${gamesData.length} Échiquiers`;
-        updateTickerUI();
-      } else if (gamesData.length === 0) {
-        loadFallbackDemoData();
-      }
-    }
-
-    // Nettoyer le format des Elo
-    function cleanElo(eloStr) {
-      if (!eloStr) return "";
-      return eloStr.replace(/\s*[FEN]/g, '').trim();
-    }
-
-    // Nettoyer les noms de joueurs
-    function cleanPlayerName(str) {
-      if (!str) return "Joueur Inconnu";
-      return str.replace(/\s+/g, ' ').trim();
-    }
-
-    // Formater le résultat pour l'affichage TV
-    function formatResult(res) {
-      if (!res || res === "X" || res.includes("&nbsp;") || res.trim() === "") return "VS";
-      if (res === "1 - 0" || res === "1-0") return "1 — 0";
-      if (res === "0 - 1" || res === "0-1") return "0 — 1";
-      if (res === "½ - ½" || res === "1/2-1/2" || res === "1/2 - 1/2" || res === "X-X") return "½ — ½";
-      return res;
-    }
-
-    // Mettre à jour les cartes HTML dans le viewport
-    function updateTickerUI() {
-      const viewport = document.getElementById('tickerViewport');
-      viewport.innerHTML = '';
-
-      if (gamesData.length === 0) return;
-
-      gamesData.forEach((game, idx) => {
-        const card = document.createElement('div');
-        card.className = `ticker-card ${idx === 0 ? 'active' : ''}`;
-        card.id = `card-${idx}`;
-
-        card.innerHTML = `
-          <!-- ÉCHIQUIER BADGE -->
-          <div class="flex items-center gap-2 min-w-[90px]">
-            <span class="text-amber-400/70 font-bold text-xs uppercase tracking-wider">ÉCH.</span>
-            <span class="gold-bg text-black font-black text-xl px-2.5 py-0.5 rounded-lg shadow-md">${game.board}</span>
-          </div>
-
-          <!-- JOUEUR BLANCS -->
-          <div class="flex-1 flex items-center justify-end gap-3 text-right pr-4 border-r border-slate-800">
-            <div>
-              <div class="text-white font-bold text-base tracking-tight leading-none">${game.white.name}</div>
-              <div class="text-slate-400 text-xs font-semibold mt-1">
-                <span class="text-amber-400/90 font-mono">${game.white.elo} ELO</span> 
-                <span class="mx-1 opacity-40">•</span> 
-                <span class="text-slate-300 font-bold">${game.white.pts} pts</span>
-              </div>
-            </div>
-            <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-900 font-black text-sm flex items-center justify-center shadow-inner shrink-0 border-2 border-white">
-              B
-            </div>
-          </div>
-
-          <!-- RÉSULTAT / SCORE CENTRAL -->
-          <div class="px-6 flex flex-col items-center justify-center min-w-[120px]">
-            <div class="bg-slate-900 border border-amber-500/40 px-4 py-1.5 rounded-xl shadow-lg">
-              <span class="text-amber-300 font-black text-lg tracking-wider">${game.result}</span>
-            </div>
-          </div>
-
-          <!-- JOUEUR NOIRS -->
-          <div class="flex-1 flex items-center justify-start gap-3 text-left pl-4 border-l border-slate-800">
-            <div class="w-8 h-8 rounded-full bg-slate-900 text-amber-400 font-black text-sm flex items-center justify-center border border-amber-500/40 shadow-inner shrink-0">
-              N
-            </div>
-            <div>
-              <div class="text-white font-bold text-base tracking-tight leading-none">${game.black.name}</div>
-              <div class="text-slate-400 text-xs font-semibold mt-1">
-                <span class="text-slate-300 font-bold">${game.black.pts} pts</span>
-                <span class="mx-1 opacity-40">•</span> 
-                <span class="text-amber-400/90 font-mono">${game.black.elo} ELO</span>
-              </div>
-            </div>
-          </div>
-        `;
-
-        viewport.appendChild(card);
-      });
-
-      currentIndex = 0;
-      restartAnimation();
-    }
-
-    // Gestionnaire de la boucle d'animation verticale pas-à-pas
-    function restartAnimation() {
-      if (slideTimer) clearInterval(slideTimer);
-      if (gamesData.length <= 1) return;
-
-      slideTimer = setInterval(() => {
-        const total = gamesData.length;
-        const currentCard = document.getElementById(`card-${currentIndex}`);
-        
-        const nextIndex = (currentIndex + 1) % total;
-        const nextCard = document.getElementById(`card-${nextIndex}`);
-
-        if (currentCard && nextCard) {
-          currentCard.classList.remove('active');
-          currentCard.classList.add('exit');
-
-          nextCard.classList.remove('exit');
-          nextCard.classList.add('active');
-
-          setTimeout(() => {
-            currentCard.classList.remove('exit');
-          }, 600);
-
-          currentIndex = nextIndex;
+        function loadFallbackData() {
+            document.getElementById('tourneyTitle').textContent = "Capechecs - Grand Prix";
+            document.getElementById('roundInfo').textContent = "Résultats de la ronde 1";
+            matchesData = [
+                { board: "1", whitePts: "0", whiteName: "RATIER-FONTANA Matteo", whiteElo: "2214 F", result: "1 - 0", blackName: "PANTALACCI Antoine Marie", blackElo: "1497 F", blackPts: "0" },
+                { board: "2", whitePts: "0", whiteName: "CASTRO PINTO Miguel Angelo", whiteElo: "1436 F", result: "0 - 1", blackName: "UTRERA Ludovic", blackElo: "2153 F", blackPts: "0" },
+                { board: "3", whitePts: "0", whiteName: "CRISTOFARI Antoine", whiteElo: "2053 F", result: "1 - 0", blackName: "BOULANGER Capucine", blackElo: "1432 F", blackPts: "0" },
+                { board: "4", whitePts: "0", whiteName: "MACHECOURT Teano", whiteElo: "1431 F", result: "0 - 1", blackName: "APPIETTO Andria", blackElo: "1962 F", blackPts: "0" },
+                { board: "5", whitePts: "0", whiteName: "PARIS Romain", whiteElo: "1951 F", result: "1 - 0", blackName: "FRANCHI Ange Marie", blackElo: "1421 F", blackPts: "0" }
+            ];
+            renderNextMatch();
+            startLoop();
         }
-      }, displayDuration);
-    }
 
-    // Données de démonstration si le réseau FFE est temporairement indisponible
-    function loadFallbackDemoData() {
-      gamesData = [
-        { board: "1", white: { name: "RATIER-FONTANA Matteo", elo: "2214", pts: "0" }, black: { name: "PANTALACCI Antoine Marie", elo: "1497", pts: "0" }, result: "1 — 0" },
-        { board: "2", white: { name: "CASTRO PINTO Miguel Angelo", elo: "1436", pts: "0" }, black: { name: "UTRERA Ludovic", elo: "2153", pts: "0" }, result: "0 — 1" },
-        { board: "3", white: { name: "CRISTOFARI Antoine", elo: "2053", pts: "0" }, black: { name: "BOULANGER Capucine", elo: "1432", pts: "0" }, result: "1 — 0" },
-        { board: "4", white: { name: "MACHECOURT Teano", elo: "1431", pts: "0" }, black: { name: "APPIETTO Andria", elo: "1962", pts: "0" }, result: "0 — 1" },
-        { board: "5", white: { name: "PARIS Romain", elo: "1951", pts: "0" }, black: { name: "FRANCHI Ange Marie", elo: "1421", pts: "0" }, result: "1 — 0" }
-      ];
-      document.getElementById('boardCount').textContent = `${gamesData.length} Échiquiers (R1)`;
-      updateTickerUI();
-    }
-  </script>
+        // Affichage du match suivant avec animation
+        function renderNextMatch() {
+            if (matchesData.length === 0) return;
+
+            const viewport = document.getElementById('cardViewport');
+            const match = matchesData[currentIndex];
+
+            let resultDisplay = match.result;
+            if (!resultDisplay || resultDisplay === " - " || resultDisplay === "0 - 0") {
+                resultDisplay = `<span class="score-empty">VS</span>`;
+            }
+
+            const cardHtml = `
+                <div class="match-card" id="card-${currentIndex}">
+                    <div class="board-badge">
+                        <span class="board-label">Ech.</span>
+                        <span class="board-number">${match.board}</span>
+                    </div>
+
+                    <div class="player-box white">
+                        <div class="player-name">${match.whiteName}</div>
+                        <div class="player-meta">
+                            <span class="pts-tag">${match.whitePts} pt${match.whitePts > 1 ? 's' : ''}</span>
+                            <span class="elo-tag">${match.whiteElo}</span>
+                        </div>
+                    </div>
+
+                    <div class="score-box">
+                        ${resultDisplay}
+                    </div>
+
+                    <div class="player-box black">
+                        <div class="player-name">${match.blackName}</div>
+                        <div class="player-meta">
+                            <span class="elo-tag">${match.blackElo}</span>
+                            <span class="pts-tag">${match.blackPts} pt${match.blackPts > 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+
+                    <div class="logo-box">
+                        <img src="${capechecsLogo}" alt="Capechecs">
+                    </div>
+                </div>
+            `;
+
+            const oldCard = viewport.querySelector('.match-card.active');
+            if (oldCard) {
+                oldCard.classList.remove('active');
+                oldCard.classList.add('exit');
+                setTimeout(() => oldCard.remove(), 500);
+            }
+
+            viewport.insertAdjacentHTML('beforeend', cardHtml);
+            const newCard = document.getElementById(`card-${currentIndex}`);
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    newCard.classList.add('active');
+                });
+            });
+
+            currentIndex = (currentIndex + 1) % matchesData.length;
+        }
+
+        function startLoop() {
+            if (displayTimer) clearInterval(displayTimer);
+            displayTimer = setInterval(renderNextMatch, 4500);
+        }
+
+        fetchFFEData();
+        fetchTimer = setInterval(fetchFFEData, 45000);
+    </script>
 </body>
 </html>
