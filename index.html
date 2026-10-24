@@ -280,7 +280,9 @@
             padding: 16px;
             border-radius: 8px;
             z-index: 9998;
-            width: 350px;
+            width: 380px;
+            max-height: 90vh;
+            overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.95);
         }
 
@@ -300,7 +302,7 @@
             color: #ffffff;
         }
 
-        .config-panel input {
+        .config-panel input, .config-panel textarea {
             width: 100%;
             padding: 8px;
             background: #000000;
@@ -308,6 +310,13 @@
             color: #ffffff;
             border-radius: 4px;
             font-size: 0.85rem;
+        }
+
+        .config-panel textarea {
+            height: 90px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 0.75rem;
         }
 
         .config-panel button {
@@ -326,6 +335,11 @@
         .config-panel button:hover {
             background: #ffffff;
         }
+
+        .divider {
+            border-top: 1px dashed var(--card-border);
+            margin: 12px 0;
+        }
     </style>
 </head>
 <body>
@@ -336,18 +350,28 @@
     <!-- Panneau Réglages -->
     <div class="config-panel" id="configPanel">
         <div class="config-group">
-            <label>URL FFE de la Ronde :</label>
-            <input type="text" id="ffeUrlInput" value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01">
+            <label>Option 1 - URL FFE de la Ronde :</label>
+            <input type="text" id="ffeUrlInput" value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/68327/68327&Action=09">
         </div>
+
+        <div class="divider"></div>
+
+        <div class="config-group">
+            <label>Option 2 - Copier / Coller le contenu HTML ou le texte de la page FFE :</label>
+            <textarea id="pastedHtmlInput" placeholder="Collez ici le code source HTML ou le tableau copié depuis la page de la FFE..."></textarea>
+        </div>
+
+        <div class="divider"></div>
+
         <div class="config-group">
             <label>Durée d'affichage par échiquier (secondes) :</label>
             <input type="number" id="displayDurationInput" value="4.5" step="0.5" min="1">
         </div>
         <div class="config-group">
-            <label>Rafraîchissement des données FFE (secondes) :</label>
+            <label>Rafraîchissement automatique via URL (secondes) :</label>
             <input type="number" id="fetchIntervalInput" value="45" step="5" min="10">
         </div>
-        <button onclick="applySettings()">Valider et Appliquer</button>
+        <button onclick="applySettings()">Valider et Charger</button>
     </div>
 
     <div class="banner-container">
@@ -382,7 +406,7 @@
 
     <script>
         // Variables globales
-        let currentFfeUrl = "https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73391/73391&Action=01";
+        let currentFfeUrl = "https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/68327/68327&Action=09";
         let displayDuration = 4500; // 4.5s par défaut
         let fetchInterval = 45000;  // 45s par défaut
         let matchesData = [];
@@ -409,13 +433,6 @@
                 document.getElementById('displayDurationInput').value = t;
             }
         }
-        if (urlParams.has('fetch')) {
-            const f = parseFloat(urlParams.get('fetch'));
-            if (!isNaN(f) && f >= 10) {
-                fetchInterval = f * 1000;
-                document.getElementById('fetchIntervalInput').value = f;
-            }
-        }
 
         function toggleConfig() {
             document.getElementById('configPanel').classList.toggle('open');
@@ -423,16 +440,22 @@
 
         function applySettings() {
             const urlInput = document.getElementById('ffeUrlInput').value.trim();
+            const pastedText = document.getElementById('pastedHtmlInput').value.trim();
             const durInput = parseFloat(document.getElementById('displayDurationInput').value);
             const fetchInput = parseFloat(document.getElementById('fetchIntervalInput').value);
 
-            if (urlInput && urlInput !== currentFfeUrl) {
-                currentFfeUrl = urlInput;
-                fetchFFEData();
-            }
             if (!isNaN(durInput) && durInput > 0) {
                 displayDuration = durInput * 1000;
             }
+
+            // Si du texte/HTML a été collé dans le champ manuel
+            if (pastedText.length > 0) {
+                parseFFEHTML(pastedText);
+            } else if (urlInput) {
+                currentFfeUrl = urlInput;
+                fetchFFEData();
+            }
+
             if (!isNaN(fetchInput) && fetchInput >= 10) {
                 fetchInterval = fetchInput * 1000;
                 if (fetchTimer) clearInterval(fetchTimer);
@@ -441,7 +464,6 @@
 
             toggleConfig();
             startLoop();
-            renderNextMatch();
         }
 
         // Téléchargement des données FFE
@@ -472,7 +494,7 @@
             }
         }
 
-        // Extraction de la table FFE
+        // Extraction de la table FFE (compatible HTML complet ou texte copié)
         function parseFFEHTML(htmlContent) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -489,7 +511,7 @@
                     
                     if (cells.length === 1 || cells.length === 8) {
                         const cellText = row.textContent;
-                        if (cellText.includes('Résultats de la ronde') || cellText.includes('Open')) {
+                        if (cellText.includes('Résultats de la ronde') || cellText.includes('Open') || cellText.includes('Tournoi')) {
                             const lines = cellText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                             if (lines.length >= 1) titleText = lines[0];
                             if (lines.length >= 2) roundText = lines[1];
@@ -518,24 +540,19 @@
                 document.getElementById('tourneyTitle').textContent = titleText;
                 document.getElementById('roundInfo').textContent = roundText;
                 matchesData = parsedMatches;
-                
-                if (!displayTimer) {
-                    currentIndex = 0;
-                    renderNextMatch();
-                    startLoop();
-                }
+                currentIndex = 0;
+                renderNextMatch();
+                startLoop();
             }
         }
 
         function loadFallbackData() {
-            document.getElementById('tourneyTitle').textContent = "Capechecs - Grand Prix";
-            document.getElementById('roundInfo').textContent = "Résultats de la ronde 1";
+            document.getElementById('tourneyTitle').textContent = "Capechecs - Tournoi FFE";
+            document.getElementById('roundInfo').textContent = "Résultats de la ronde";
             matchesData = [
                 { board: "1", whitePts: "0", whiteName: "RATIER-FONTANA Matteo", whiteElo: "2214 F", result: "1 - 0", blackName: "PANTALACCI Antoine Marie", blackElo: "1497 F", blackPts: "0" },
                 { board: "2", whitePts: "0", whiteName: "CASTRO PINTO Miguel Angelo", whiteElo: "1436 F", result: "0 - 1", blackName: "UTRERA Ludovic", blackElo: "2153 F", blackPts: "0" },
-                { board: "3", whitePts: "0", whiteName: "CRISTOFARI Antoine", whiteElo: "2053 F", result: "1 - 0", blackName: "BOULANGER Capucine", blackElo: "1432 F", blackPts: "0" },
-                { board: "4", whitePts: "0", whiteName: "MACHECOURT Teano", whiteElo: "1431 F", result: "0 - 1", blackName: "APPIETTO Andria", blackElo: "1962 F", blackPts: "0" },
-                { board: "5", whitePts: "0", whiteName: "PARIS Romain", whiteElo: "1951 F", result: "1 - 0", blackName: "FRANCHI Ange Marie", blackElo: "1421 F", blackPts: "0" }
+                { board: "3", whitePts: "0", whiteName: "CRISTOFARI Antoine", whiteElo: "2053 F", result: "1 - 0", blackName: "BOULANGER Capucine", blackElo: "1432 F", blackPts: "0" }
             ];
             renderNextMatch();
             startLoop();
