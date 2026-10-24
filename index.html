@@ -6,11 +6,8 @@
     <title>Bannière Échecs Rotative - Capechecs</title>
     <style>
         :root {
-            /* COULEURS DES BANNIÈRES */
             --banner-bg: #000000;
             --card-border: #333333;
-            
-            /* COULEURS TEXTE & ACCENTS */
             --text-primary: #ffffff;
             --text-secondary: #cccccc;
             --accent-gold: #f59e0b;
@@ -23,7 +20,6 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        /* FOND DE PAGE GLOBAL TRANSPARENT */
         body, html {
             width: 100%;
             height: 100%;
@@ -32,7 +28,6 @@
             color: var(--text-primary);
         }
 
-        /* Conteneur principal transparent */
         .banner-container {
             width: 100%;
             height: 100%;
@@ -45,7 +40,6 @@
             position: relative;
         }
 
-        /* En-tête du tournoi (FOND NOIR) */
         .tournament-header {
             width: 100%;
             max-width: 950px;
@@ -74,7 +68,6 @@
             color: var(--text-secondary);
         }
 
-        /* Cadre général de la bannière (FOND NOIR) */
         .main-banner-frame {
             width: 100%;
             max-width: 950px;
@@ -89,7 +82,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
-        /* Fenêtre de défilement pour les cartes */
         .card-viewport {
             position: absolute;
             left: 15px;
@@ -99,7 +91,6 @@
             overflow: hidden;
         }
 
-        /* Carte de jeu défilante (FOND NOIR) */
         .match-card {
             width: 100%;
             height: 100%;
@@ -125,7 +116,6 @@
             transform: translateY(-100%);
         }
 
-        /* Numéro d'échiquier */
         .board-badge {
             display: flex;
             flex-direction: column;
@@ -150,7 +140,6 @@
             line-height: 1;
         }
 
-        /* Blocs joueurs (Blancs / Noirs) */
         .player-box {
             display: flex;
             flex-direction: column;
@@ -202,7 +191,6 @@
             font-weight: 600;
         }
 
-        /* Bloc Score / Résultat Central */
         .score-box {
             display: flex;
             justify-content: center;
@@ -224,7 +212,6 @@
             letter-spacing: 0;
         }
 
-        /* LOGO STATIQUE (FOND NOIR) */
         .static-logo-box {
             position: absolute;
             right: 15px;
@@ -247,7 +234,6 @@
             border: 1px solid #444444;
         }
 
-        /* Bouton de configuration (⚙ Réglages) */
         .config-toggle {
             position: fixed;
             top: 8px;
@@ -269,7 +255,6 @@
             color: #000000;
         }
 
-        /* Panneau de configuration */
         .config-panel {
             display: none;
             position: fixed;
@@ -313,7 +298,7 @@
         }
 
         .config-panel textarea {
-            height: 90px;
+            height: 100px;
             resize: vertical;
             font-family: monospace;
             font-size: 0.75rem;
@@ -355,8 +340,8 @@
         <div class="divider"></div>
 
         <div class="config-group">
-            <label>Option 2 - Copier / Coller le contenu ou texte FFE :</label>
-            <textarea id="pastedHtmlInput" placeholder="Collez ici le texte brut copié sur la FFE..."></textarea>
+            <label>Option 2 - Copier / Coller le contenu brut FFE :</label>
+            <textarea id="pastedHtmlInput" placeholder="Collez ici le texte brut sélectionné sur la FFE..."></textarea>
         </div>
 
         <div class="divider"></div>
@@ -404,6 +389,7 @@
         let currentIndex = 0;
         let displayTimer = null;
         let fetchTimer = null;
+        let isManualMode = false;
 
         const corsProxies = [
             (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
@@ -438,16 +424,18 @@
             }
 
             if (pastedText.length > 0) {
+                isManualMode = true;
+                if (fetchTimer) clearInterval(fetchTimer);
                 parseInputContent(pastedText);
             } else if (urlInput) {
+                isManualMode = false;
                 currentFfeUrl = urlInput;
                 fetchFFEData();
-            }
-
-            if (!isNaN(fetchInput) && fetchInput >= 10) {
-                fetchInterval = fetchInput * 1000;
-                if (fetchTimer) clearInterval(fetchTimer);
-                fetchTimer = setInterval(fetchFFEData, fetchInterval);
+                if (!isNaN(fetchInput) && fetchInput >= 10) {
+                    fetchInterval = fetchInput * 1000;
+                    if (fetchTimer) clearInterval(fetchTimer);
+                    fetchTimer = setInterval(fetchFFEData, fetchInterval);
+                }
             }
 
             toggleConfig();
@@ -455,6 +443,8 @@
         }
 
         async function fetchFFEData() {
+            if (isManualMode) return;
+
             let htmlText = "";
             try {
                 const response = await fetch(corsProxies[0](currentFfeUrl));
@@ -480,69 +470,68 @@
             }
         }
 
-        // Parseur universel : HTML, colonnes structurées et texte continu sans séparateurs
         function parseInputContent(rawContent) {
             let parsedMatches = [];
             let titleText = "Capechecs - Tournoi FFE";
             let roundText = "Résultats";
 
-            // 1. TENTATIVE PARSAGE HTML
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(rawContent, 'text/html');
-            const tables = doc.querySelectorAll('table');
+            // Nettoyage préalable des espaces insécables HTML
+            const cleanText = rawContent.replace(/\u00a0/g, ' ').trim();
 
-            tables.forEach(table => {
-                const rows = table.querySelectorAll('tr');
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('td');
-                    if (cells.length === 1 || cells.length === 8) {
-                        const cellText = row.textContent;
-                        if (cellText.includes('Résultats de la ronde') || cellText.includes('Open') || cellText.includes('Tournoi') || cellText.includes('Capechecs')) {
-                            const lines = cellText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                            if (lines.length >= 1) titleText = lines[0];
-                            if (lines.length >= 2) roundText = lines[1];
-                        }
-                    }
+            // PARSAGE PAR REGEX ROBUSTE SUR LE TEXTE BRUT
+            // Capture : Echiquier | PtsB | NomB | EloB | Resultat | NomN | EloN | PtsN
+            const regex = /(\d{1,3})\s*([\d½X\.\-]+)\s*([A-Z\s\-'\.]+?)\s*(\d{3,4}\s*[FkN]?)\s*(1\s*-\s*0|0\s*-\s*1|½\s*-\s*½|\s*-\s*|\s+)\s*([A-Z\s\-'\.]+?)\s*(\d{3,4}\s*[FkN]?|EXEMPT|FEXEMPT)\s*([\d½X\.\-]*)/gi;
 
-                    if (cells.length === 8) {
-                        const boardNum = cells[0].textContent.trim();
-                        if (!isNaN(parseInt(boardNum))) {
-                            parsedMatches.push({
-                                board: boardNum,
-                                whitePts: cells[1].textContent.trim(),
-                                whiteName: cells[2].textContent.trim(),
-                                whiteElo: cells[3].textContent.trim().replace(/\u00a0/g, ' '),
-                                result: cells[4].textContent.trim(),
-                                blackName: cells[5].textContent.trim(),
-                                blackElo: cells[6].textContent.trim().replace(/\u00a0/g, ' '),
-                                blackPts: cells[7].textContent.trim()
-                            });
-                        }
-                    }
+            let match;
+            while ((match = regex.exec(cleanText)) !== null) {
+                parsedMatches.push({
+                    board: match[1].trim(),
+                    whitePts: match[2].trim(),
+                    whiteName: match[3].trim(),
+                    whiteElo: match[4].trim(),
+                    result: match[5].trim() || "VS",
+                    blackName: match[6].trim(),
+                    blackElo: match[7].trim(),
+                    blackPts: match[8] ? match[8].trim() : ""
                 });
-            });
+            }
 
-            // 2. PARSAGE REGEX TEXTE BRUT CONTINU (Si pas de tables HTML)
+            // TENTATIVE PARSAGE HTML SI LA REGEX N'A RIEN TROUVÉ
             if (parsedMatches.length === 0) {
-                // Expression régulière pour capturer le motif FFE continu
-                const matchRegex = /(\d+)\s*([\d½X\.\-]+)\s*([A-Z\s\-']+?)\s*(\d{3,4}\s*[FkN]?)\s*([\d½\-\s]+|1-0|0-1|½-½|\s+)\s*([A-Z\s\-']+?)\s*(\d{3,4}\s*[FkN]?)\s*([\d½X\.\-]+)/gi;
-                
-                let match;
-                // Nettoyage des espaces insécables
-                const cleanText = rawContent.replace(/\u00a0/g, ' ');
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(rawContent, 'text/html');
+                const tables = doc.querySelectorAll('table');
 
-                while ((match = matchRegex.exec(cleanText)) !== null) {
-                    parsedMatches.push({
-                        board: match[1].trim(),
-                        whitePts: match[2].trim(),
-                        whiteName: match[3].trim(),
-                        whiteElo: match[4].trim(),
-                        result: match[5].trim() || "VS",
-                        blackName: match[6].trim(),
-                        blackElo: match[7].trim(),
-                        blackPts: match[8].trim()
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length === 1 || cells.length === 8) {
+                            const cellText = row.textContent;
+                            if (cellText.includes('Résultats') || cellText.includes('Open') || cellText.includes('Tournoi') || cellText.includes('Capechecs')) {
+                                const lines = cellText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                if (lines.length >= 1) titleText = lines[0];
+                                if (lines.length >= 2) roundText = lines[1];
+                            }
+                        }
+
+                        if (cells.length === 8) {
+                            const boardNum = cells[0].textContent.trim();
+                            if (!isNaN(parseInt(boardNum))) {
+                                parsedMatches.push({
+                                    board: boardNum,
+                                    whitePts: cells[1].textContent.trim(),
+                                    whiteName: cells[2].textContent.trim(),
+                                    whiteElo: cells[3].textContent.trim().replace(/\u00a0/g, ' '),
+                                    result: cells[4].textContent.trim(),
+                                    blackName: cells[5].textContent.trim(),
+                                    blackElo: cells[6].textContent.trim().replace(/\u00a0/g, ' '),
+                                    blackPts: cells[7].textContent.trim()
+                                });
+                            }
+                        }
                     });
-                }
+                });
             }
 
             if (parsedMatches.length > 0) {
@@ -558,3 +547,79 @@
         function loadFallbackData() {
             document.getElementById('tourneyTitle').textContent = "Capechecs - Tournoi FFE";
             document.getElementById('roundInfo').textContent = "Résultats de la ronde";
+            matchesData = [
+                { board: "1", whitePts: "0", whiteName: "MAURIZZI Marc Andria", whiteElo: "2624 F", result: "VS", blackName: "BLANCHET Mathieu", blackElo: "2146 F", blackPts: "0" }
+            ];
+            renderNextMatch();
+            startLoop();
+        }
+
+        function renderNextMatch() {
+            if (matchesData.length === 0) return;
+
+            const viewport = document.getElementById('cardViewport');
+            const match = matchesData[currentIndex];
+
+            let resultDisplay = match.result;
+            if (!resultDisplay || resultDisplay === " - " || resultDisplay === "0 - 0" || resultDisplay === "VS") {
+                resultDisplay = `<span class="score-empty">VS</span>`;
+            }
+
+            const cardHtml = `
+                <div class="match-card" id="card-${currentIndex}">
+                    <div class="board-badge">
+                        <span class="board-label">Ech.</span>
+                        <span class="board-number">${match.board}</span>
+                    </div>
+
+                    <div class="player-box white">
+                        <div class="player-name">${match.whiteName}</div>
+                        <div class="player-meta">
+                            <span class="pts-tag">${match.whitePts} pt${match.whitePts > 1 ? 's' : ''}</span>
+                            <span class="elo-tag">${match.whiteElo}</span>
+                        </div>
+                    </div>
+
+                    <div class="score-box">
+                        ${resultDisplay}
+                    </div>
+
+                    <div class="player-box black">
+                        <div class="player-name">${match.blackName}</div>
+                        <div class="player-meta">
+                            <span class="elo-tag">${match.blackElo}</span>
+                            <span class="pts-tag">${match.blackPts ? match.blackPts + ' pt' + (match.blackPts > 1 ? 's' : '') : ''}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const oldCard = viewport.querySelector('.match-card.active');
+            if (oldCard) {
+                oldCard.classList.remove('active');
+                oldCard.classList.add('exit');
+                setTimeout(() => oldCard.remove(), 500);
+            }
+
+            viewport.insertAdjacentHTML('beforeend', cardHtml);
+            const newCard = document.getElementById(`card-${currentIndex}`);
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    newCard.classList.add('active');
+                });
+            });
+
+            currentIndex = (currentIndex + 1) % matchesData.length;
+        }
+
+        function startLoop() {
+            if (displayTimer) clearInterval(displayTimer);
+            displayTimer = setInterval(renderNextMatch, displayDuration);
+        }
+
+        fetchFFEData();
+        fetchTimer = setInterval(fetchFFEData, fetchInterval);
+    </script>
+</body>
+</html>
