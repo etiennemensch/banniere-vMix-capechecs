@@ -24,7 +24,7 @@
         body, html {
             width: 100%;
             height: 100%;
-            background-color: transparent !important;
+            background-color: #0d0d0d;
             overflow: hidden;
             color: var(--text-primary);
         }
@@ -37,7 +37,6 @@
             justify-content: center;
             align-items: center;
             padding: 10px;
-            background: transparent;
             position: relative;
         }
 
@@ -69,7 +68,6 @@
             color: var(--text-secondary);
         }
 
-        /* Cadre général réglable en hauteur */
         .main-banner-frame {
             width: 100%;
             max-width: 950px;
@@ -127,7 +125,7 @@
             background: #111111;
             border: 1px solid var(--accent-gold);
             border-radius: 6px;
-            padding: 4px 4px;
+            padding: 4px;
             color: var(--accent-gold);
             font-weight: 800;
         }
@@ -212,7 +210,6 @@
             font-size: 0.85rem;
             color: var(--text-secondary);
             font-weight: 500;
-            letter-spacing: 0;
         }
 
         .static-logo-box {
@@ -237,20 +234,21 @@
             border: 1px solid #444444;
         }
 
+        /* Bouton de configuration */
         .config-toggle {
             position: fixed;
-            top: 8px;
-            right: 8px;
+            top: 12px;
+            right: 12px;
             background: var(--accent-gold);
             color: #000000;
-            border: 1px solid #ffffff;
+            border: 2px solid #ffffff;
             border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 0.8rem;
+            padding: 8px 16px;
+            font-size: 0.85rem;
             font-weight: bold;
             cursor: pointer;
-            z-index: 9999;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+            z-index: 99999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
         }
 
         .config-toggle:hover {
@@ -258,24 +256,25 @@
             color: #000000;
         }
 
+        /* Panneau de configuration */
         .config-panel {
             display: none;
             position: fixed;
-            top: 45px;
-            right: 8px;
+            top: 55px;
+            right: 12px;
             background: #111111;
             border: 2px solid var(--accent-gold);
             padding: 16px;
             border-radius: 8px;
-            z-index: 9998;
+            z-index: 99998;
             width: 380px;
-            max-height: 90vh;
+            max-height: 85vh;
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.95);
         }
 
         .config-panel.open {
-            display: block;
+            display: block !important;
         }
 
         .config-group {
@@ -311,48 +310,4 @@
             background: var(--accent-gold);
             color: #000000;
             border: none;
-            padding: 10px 12px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 8px;
-            font-size: 0.85rem;
-        }
-
-        .config-panel button:hover {
-            background: #ffffff;
-        }
-
-        .divider {
-            border-top: 1px dashed var(--card-border);
-            margin: 12px 0;
-        }
-    </style>
-</head>
-<body>
-
-    <button class="config-toggle" onclick="toggleConfig()">⚙ Réglages</button>
-    
-    <div class="config-panel" id="configPanel">
-        <div class="config-group">
-            <label>Option 1 - URL FFE de la Ronde :</label>
-            <input type="text" id="ffeUrlInput" value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73002/73002&Action=01">
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="config-group">
-            <label>Option 2 - Copier / Coller le contenu brut FFE :</label>
-            <textarea id="pastedHtmlInput" placeholder="Collez ici le texte brut sélectionné sur la FFE..."></textarea>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="config-group">
-            <label>Hauteur de la bannière (px) :</label>
-            <input type="number" id="bannerHeightInput" value="90" step="5" min="50" max="200">
-        </div>
-        <div class="config-group">
-            <label>Durée d'affichage par échiquier (secondes) :</label>
-            <input type="number" id="displayDurationInput" value="4.5" step="0.5" min
+            padding: 10px 12
