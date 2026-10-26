@@ -80,7 +80,6 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            transition: height 0.3s ease;
         }
 
         .card-viewport {
@@ -92,7 +91,6 @@
             overflow: hidden;
         }
 
-        /* Utilisation d'une grille stricte avec des proportions verrouillées */
         .match-card {
             width: 100%;
             height: 100%;
@@ -101,9 +99,9 @@
             left: 0;
             background: var(--banner-bg);
             display: grid;
-            grid-template-columns: 65px minmax(0, 1fr) 90px minmax(0, 1fr);
+            grid-template-columns: 65px minmax(0, 1fr) 85px minmax(0, 1fr);
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             opacity: 0;
             transform: translateY(100%);
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -295,21 +293,15 @@
             color: #ffffff;
         }
 
-        .config-panel input, .config-panel textarea {
+        .config-panel textarea {
             width: 100%;
-            padding: 8px;
+            height: 120px;
             background: #000000;
             border: 1px solid var(--card-border);
             color: #ffffff;
             border-radius: 4px;
-            font-size: 0.85rem;
-        }
-
-        .config-panel textarea {
-            height: 110px;
-            resize: vertical;
-            font-family: monospace;
             font-size: 0.75rem;
+            font-family: monospace;
         }
 
         .config-panel button {
@@ -324,11 +316,6 @@
             margin-top: 8px;
             font-size: 0.85rem;
         }
-
-        .divider {
-            border-top: 1px dashed var(--card-border);
-            margin: 12px 0;
-        }
     </style>
 </head>
 <body>
@@ -336,32 +323,10 @@
     <button class="config-toggle" id="configToggleBtn" type="button">⚙ Réglages (ou touche R)</button>
     
     <div class="config-panel" id="configPanel">
-        <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size:1rem;">Configuration de la Bannière</h3>
+        <h3 style="color:var(--accent-gold); margin-bottom:10px; font-size:1rem;">Configuration Bannière</h3>
         <div class="config-group">
-            <label>Option 1 - URL FFE de la Ronde :</label>
-            <input type="text" id="ffeUrlInput" value="https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73002/73002&Action=01">
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="config-group">
-            <label>Option 2 - Copier / Coller le contenu brut FFE :</label>
-            <textarea id="pastedHtmlInput" placeholder="Collez ici le texte brut sélectionné sur la FFE..."></textarea>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="config-group">
-            <label>Hauteur de la bannière (px) :</label>
-            <input type="number" id="bannerHeightInput" value="90" step="5" min="50" max="200">
-        </div>
-        <div class="config-group">
-            <label>Durée d'affichage par échiquier (secondes) :</label>
-            <input type="number" id="displayDurationInput" value="4.5" step="0.5" min="1">
-        </div>
-        <div class="config-group">
-            <label>Rafraîchissement automatique via URL (secondes) :</label>
-            <input type="number" id="fetchIntervalInput" value="45" step="5" min="10">
+            <label>Copier / Coller le contenu FFE brut :</label>
+            <textarea id="pastedHtmlInput" placeholder="Collez ici le texte copié sur la FFE..."></textarea>
         </div>
         <button id="applyBtn" type="button">Valider et Charger</button>
     </div>
@@ -391,25 +356,14 @@
     </div>
 
     <script>
-        let currentFfeUrl = "https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73002/73002&Action=01";
         let displayDuration = 4500;
-        let fetchInterval = 45000;
         let matchesData = [];
         let currentIndex = 0;
         let displayTimer = null;
-        let fetchTimer = null;
-        let isManualMode = false;
-
-        const corsProxies = [
-            (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`
-        ];
 
         function togglePanel() {
             const panel = document.getElementById('configPanel');
-            if (panel) {
-                panel.classList.toggle('open');
-            }
+            if (panel) panel.classList.toggle('open');
         }
 
         window.addEventListener('keydown', (e) => {
@@ -426,7 +380,6 @@
 
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
                     e.preventDefault();
                     togglePanel();
                 });
@@ -434,114 +387,20 @@
 
             if (applyBtn) {
                 applyBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
                     e.preventDefault();
                     applySettings();
                 });
             }
 
             loadFallbackData();
-            fetchFFEData();
-            fetchTimer = setInterval(fetchFFEData, fetchInterval);
         });
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('url')) {
-            currentFfeUrl = urlParams.get('url');
-            const input = document.getElementById('ffeUrlInput');
-            if (input) input.value = currentFfeUrl;
-        }
-        if (urlParams.has('timer')) {
-            const t = parseFloat(urlParams.get('timer'));
-            if (!isNaN(t) && t > 0) {
-                displayDuration = t * 1000;
-                const input = document.getElementById('displayDurationInput');
-                if (input) input.value = t;
-            }
-        }
-        if (urlParams.has('height')) {
-            const h = parseInt(urlParams.get('height'));
-            if (!isNaN(h) && h >= 50) {
-                document.documentElement.style.setProperty('--banner-height', `${h}px`);
-                const input = document.getElementById('bannerHeightInput');
-                if (input) input.value = h;
-            }
-        }
-
         function applySettings() {
-            const urlInput = document.getElementById('ffeUrlInput').value.trim();
             const pastedText = document.getElementById('pastedHtmlInput').value.trim();
-            const durInput = parseFloat(document.getElementById('displayDurationInput').value);
-            const fetchInput = parseFloat(document.getElementById('fetchIntervalInput').value);
-            const heightInput = parseInt(document.getElementById('bannerHeightInput').value);
-
-            if (!isNaN(heightInput) && heightInput >= 50) {
-                document.documentElement.style.setProperty('--banner-height', `${heightInput}px`);
-            }
-
-            if (!isNaN(durInput) && durInput > 0) {
-                displayDuration = durInput * 1000;
-            }
-
             if (pastedText.length > 0) {
-                isManualMode = true;
-                if (fetchTimer) clearInterval(fetchTimer);
                 parseInputContent(pastedText);
-            } else if (urlInput) {
-                isManualMode = false;
-                currentFfeUrl = urlInput;
-                fetchFFEData();
-                if (!isNaN(fetchInput) && fetchInput >= 10) {
-                    fetchInterval = fetchInput * 1000;
-                    if (fetchTimer) clearInterval(fetchTimer);
-                    fetchTimer = setInterval(fetchFFEData, fetchInterval);
-                }
             }
-
-            const panel = document.getElementById('configPanel');
-            if (panel) panel.classList.remove('open');
-        }
-
-        async function fetchFFEData() {
-            if (isManualMode) return;
-
-            let htmlText = "";
-            try {
-                const response = await fetch(corsProxies[0](currentFfeUrl));
-                if (response.ok) {
-                    const data = await response.json();
-                    htmlText = data.contents;
-                }
-            } catch (e) {
-                try {
-                    const response = await fetch(corsProxies[1](currentFfeUrl));
-                    if (response.ok) {
-                        htmlText = await response.text();
-                    }
-                } catch (err) {
-                    console.error("Erreur réseau :", err);
-                }
-            }
-
-            if (htmlText) {
-                parseInputContent(htmlText);
-            }
-        }
-
-        function cleanResultValue(val) {
-            if (!val) return "VS";
-            let v = val.replace(/\s+/g, '').trim();
-            if (v === "X-X" || v === "½-½" || v === "1/2-1/2" || v === "1/2" || v === "½" || v.includes("1/2") || v.includes("½")) {
-                return "1/2";
-            }
-            if (v === "1-0" || v === "0-1") {
-                return v.replace('-', ' - ');
-            }
-            // Si la chaîne contient du texte (ex: un nom collé par erreur), on sécurise sur VS
-            if (v.length > 7 || /[a-zA-Z]{2,}/.test(v)) {
-                return "VS";
-            }
-            return v || "VS";
+            togglePanel();
         }
 
         function parseInputContent(rawContent) {
@@ -549,93 +408,37 @@
             let titleText = "Capechecs - Tournoi FFE";
             let roundText = "Résultats";
 
-            const cleanText = rawContent.replace(/\u00a0/g, ' ').replace(/\r/g, '');
-            const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            // Extraction automatique du nom du tournoi et du numéro de ronde
+            const matchTitle = rawContent.match(/(.+?)(?=Appariements|Résultats)/i);
+            if (matchTitle) titleText = matchTitle[1].replace(/\u00a0/g, ' ').trim();
 
-            for (let line of lines) {
-                if (line.includes('Résultats') || line.includes('Round') || line.includes('Ronde')) {
-                    roundText = line;
-                    continue;
-                } else if (line.includes('Open') || line.includes('Tournoi') || line.includes('Capechecs')) {
-                    titleText = line;
-                    continue;
+            const matchRound = rawContent.match(/(Appariements|Résultats)\s+de\s+la\s+ronde\s+(\d+)/i);
+            if (matchRound) roundText = `${matchRound[1]} - Ronde ${matchRound[2]}`;
+
+            // Regex de capture sur le texte brut collé
+            const regexRow = /(\d{1,3})([\d½X\.\-]{1,4})\s+([A-Z\s\-'\.]+?)\s+(\d{3,4}\s*[FkN]?)\s*(1\s*-\s*0|0\s*-\s*1|½\s*-\s*½|X\s*-\s*X|1\/2\s*-\s*1\/2|1\/2|\s*-\s*|\s+)?\s*([A-Z\s\-'\.]+?)\s+(\d{3,4}\s*[FkN]?|EXEMPT|FEXEMPT)\s*([\d½X\.\-]*)/gi;
+
+            let m;
+            while ((m = regexRow.exec(rawContent)) !== null) {
+                let res = m[5] ? m[5].trim() : "";
+                let resClean = "VS";
+
+                // Normalisation stricte de la colonne centrale Res.
+                if (res === "X-X" || res === "½-½" || res === "1/2-1/2" || res.includes("1/2") || res.includes("½")) {
+                    resClean = "1/2";
+                } else if (res === "1-0" || res === "0-1") {
+                    resClean = res.replace(/\s+/g, '');
                 }
 
-                let parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
-
-                if (parts.length >= 7 && !isNaN(parseInt(parts[0]))) {
-                    // Analyse sécurisée des 8 colonnes FFE : Ech, Pts, Blancs, Elo, Res, Noirs, Elo, Pts
-                    let bNum = parts[0];
-                    let wPts = parts[1] || "";
-                    let wName = parts[2] || "";
-                    let wElo = parts[3] || "";
-                    let resVal = parts[4] || "VS";
-                    let bName = parts[5] || "";
-                    let bElo = parts[6] || "";
-                    let bPts = parts[7] || "";
-
-                    // Décalage automatique si la colonne résultat a été omise lors de la sélection
-                    if (/[a-zA-Z]{3,}/.test(resVal) && !/[01½X\-]/.test(resVal)) {
-                        bPts = bElo;
-                        bElo = bName;
-                        bName = resVal;
-                        resVal = "VS";
-                    }
-
-                    parsedMatches.push({
-                        board: bNum,
-                        whitePts: wPts,
-                        whiteName: wName,
-                        whiteElo: wElo,
-                        result: cleanResultValue(resVal),
-                        blackName: bName,
-                        blackElo: bElo,
-                        blackPts: bPts
-                    });
-                    continue;
-                }
-
-                const rowRegex = /(\d{1,3})\s+([\d½X\.\-]+)\s+(.+?)\s+(\d{3,4}\s*[FkN]?)\s+(1\s*-\s*0|0\s*-\s*1|½\s*-\s*½|X\s*-\s*X|1\/2\s*-\s*1\/2|1\/2|\s*-\s*|VS)\s+(.+?)\s+(\d{3,4}\s*[FkN]?|EXEMPT|FEXEMPT)\s*([\d½X\.\-]*)/i;
-                const m = line.match(rowRegex);
-                if (m) {
-                    parsedMatches.push({
-                        board: m[1].trim(),
-                        whitePts: m[2].trim(),
-                        whiteName: m[3].trim(),
-                        whiteElo: m[4].trim(),
-                        result: cleanResultValue(m[5].trim()),
-                        blackName: m[6].trim(),
-                        blackElo: m[7].trim(),
-                        blackPts: m[8] ? m[8].trim() : ""
-                    });
-                }
-            }
-
-            if (parsedMatches.length === 0) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(rawContent, 'text/html');
-                const tables = doc.querySelectorAll('table');
-
-                tables.forEach(table => {
-                    const rows = table.querySelectorAll('tr');
-                    rows.forEach(row => {
-                        const cells = row.querySelectorAll('td');
-                        if (cells.length === 8) {
-                            const boardNum = cells[0].textContent.trim();
-                            if (!isNaN(parseInt(boardNum)) && parseInt(boardNum) > 0) {
-                                parsedMatches.push({
-                                    board: boardNum,
-                                    whitePts: cells[1].textContent.trim(),
-                                    whiteName: cells[2].textContent.trim(),
-                                    whiteElo: cells[3].textContent.trim().replace(/\u00a0/g, ' '),
-                                    result: cleanResultValue(cells[4].textContent.trim()),
-                                    blackName: cells[5].textContent.trim(),
-                                    blackElo: cells[6].textContent.trim().replace(/\u00a0/g, ' '),
-                                    blackPts: cells[7].textContent.trim()
-                                });
-                            }
-                        }
-                    });
+                parsedMatches.push({
+                    board: m[1].trim(),
+                    whitePts: m[2].trim(),
+                    whiteName: m[3].trim(),
+                    whiteElo: m[4].trim(),
+                    result: resClean,
+                    blackName: m[6].trim(),
+                    blackElo: m[7].trim(),
+                    blackPts: m[8] ? m[8].trim() : ""
                 });
             }
 
@@ -652,10 +455,11 @@
         }
 
         function loadFallbackData() {
-            document.getElementById('tourneyTitle').textContent = "Capechecs - Tournoi FFE";
-            document.getElementById('roundInfo').textContent = "Résultats de la ronde";
+            document.getElementById('tourneyTitle').textContent = "24e rencontres du Cap - Grand Prix";
+            document.getElementById('roundInfo').textContent = "Appariements - Ronde 5";
             matchesData = [
-                { board: "1", whitePts: "0", whiteName: "RADOMSKYI Vladyslav", whiteElo: "2504 F", result: "1/2", blackName: "MAURIZZI Marc Andria", blackElo: "2624 F", blackPts: "0" }
+                { board: "1", whitePts: "4", whiteName: "MAURIZZI Marc Andria", whiteElo: "2624 F", result: "VS", blackName: "TRAVADON Loic", blackElo: "2528 F", blackPts: "4" },
+                { board: "2", whitePts: "3½", whiteName: "RIFF Jean-Noel", whiteElo: "2419 F", result: "VS", blackName: "IDANI Pouya", blackElo: "2615 F", blackPts: "3½" }
             ];
             if (!displayTimer) {
                 renderNextMatch();
@@ -674,9 +478,6 @@
                 resDisplay = `<span class="score-empty">VS</span>`;
             }
 
-            const whitePtsDisplay = match.whitePts;
-            const blackPtsDisplay = match.blackPts;
-
             const cardHtml = `
                 <div class="match-card" id="card-${currentIndex}">
                     <div class="board-badge">
@@ -687,7 +488,7 @@
                     <div class="player-box white">
                         <div class="player-name">${match.whiteName}</div>
                         <div class="player-meta">
-                            <span class="pts-tag">${whitePtsDisplay}${whitePtsDisplay !== "" ? ' pt' + (parseFloat(whitePtsDisplay) > 1 ? 's' : '') : ''}</span>
+                            <span class="pts-tag">${match.whitePts} pt${parseFloat(match.whitePts) > 1 ? 's' : ''}</span>
                             <span class="elo-tag">${match.whiteElo}</span>
                         </div>
                     </div>
@@ -700,7 +501,7 @@
                         <div class="player-name">${match.blackName}</div>
                         <div class="player-meta">
                             <span class="elo-tag">${match.blackElo}</span>
-                            <span class="pts-tag">${blackPtsDisplay}${blackPtsDisplay !== "" ? ' pt' + (parseFloat(blackPtsDisplay) > 1 ? 's' : '') : ''}</span>
+                            <span class="pts-tag">${match.blackPts ? match.blackPts + ' pt' + (parseFloat(match.blackPts) > 1 ? 's' : '') : ''}</span>
                         </div>
                     </div>
                 </div>
