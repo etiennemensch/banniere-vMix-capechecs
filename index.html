@@ -180,7 +180,6 @@
             var resRaw = m.result ? m.result.replace(/\s+/g, '') : '';
             var resDisplay = m.result;
 
-            // Normalisation de la colonne centrale Res. uniquement
             if (resRaw === "X-X" || resRaw === "½-½" || resRaw === "1/2-1/2" || resRaw.indexOf("1/2") !== -1 || resRaw.indexOf("X-X") !== -1 || resRaw.indexOf("½-½") !== -1) {
                 resDisplay = "1/2";
             } else if (!resRaw || resRaw === "-" || resRaw === "VS") {
