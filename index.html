@@ -373,4 +373,323 @@
                     <rect x="0" y="240" width="190" height="240" fill="#000000" />
                     <rect x="190" y="240" width="190" height="240" fill="#ffffff" />
                     <path d="M 135 70 C 80 70 50 100 50 120 C 50 140 80 170 135 170" stroke="#000000" stroke-width="26" fill="none" stroke-linecap="square" />
-                    <path d="M 230 75 L 310 75 L 310 105 L 295 105 L 295 125 L 305 125
+                    <path d="M 230 75 L 310 75 L 310 105 L 295 105 L 295 125 L 305 125 L 305 145 L 290 155 L 290 190 L 325 200 L 325 215 L 215 215 L 215 200 L 250 190 L 250 155 L 235 145 L 235 125 L 245 125 L 245 105 L 230 105 Z M 250 75 L 250 90 L 263 90 L 263 75 M 277 75 L 277 90 L 290 90 L 290 75" fill="#ffffff" />
+                    <path d="M 95 280 A 25 25 0 1 0 95 330 A 25 25 0 1 0 95 280 M 80 330 L 110 330 L 110 345 L 80 345 Z M 82 350 C 70 370 70 410 65 425 L 125 425 C 120 410 120 370 108 350 Z M 60 430 L 130 430 L 130 450 L 60 450 Z" fill="#ffffff" />
+                    <path d="M 235 280 L 325 280 L 325 305 L 265 305 L 265 350 L 315 350 L 315 375 L 265 375 L 265 425 L 325 425 L 325 450 L 235 450 Z" fill="#000000" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFfeUrl = "https://www.echecs.asso.fr/Resultats.aspx?URL=Tournois/Id/73002/73002&Action=01";
+        let displayDuration = 4500;
+        let fetchInterval = 45000;
+        let matchesData = [];
+        let currentIndex = 0;
+        let displayTimer = null;
+        let fetchTimer = null;
+        let isManualMode = false;
+
+        const corsProxies = [
+            (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+            (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`
+        ];
+
+        function togglePanel() {
+            const panel = document.getElementById('configPanel');
+            if (panel) {
+                panel.classList.toggle('open');
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R' || e.key === 'c' || e.key === 'C') {
+                if (document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                    togglePanel();
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.getElementById('configToggleBtn');
+            const applyBtn = document.getElementById('applyBtn');
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    togglePanel();
+                });
+            }
+
+            if (applyBtn) {
+                applyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    applySettings();
+                });
+            }
+
+            loadFallbackData();
+            fetchFFEData();
+            fetchTimer = setInterval(fetchFFEData, fetchInterval);
+        });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('url')) {
+            currentFfeUrl = urlParams.get('url');
+            const input = document.getElementById('ffeUrlInput');
+            if (input) input.value = currentFfeUrl;
+        }
+        if (urlParams.has('timer')) {
+            const t = parseFloat(urlParams.get('timer'));
+            if (!isNaN(t) && t > 0) {
+                displayDuration = t * 1000;
+                const input = document.getElementById('displayDurationInput');
+                if (input) input.value = t;
+            }
+        }
+        if (urlParams.has('height')) {
+            const h = parseInt(urlParams.get('height'));
+            if (!isNaN(h) && h >= 50) {
+                document.documentElement.style.setProperty('--banner-height', `${h}px`);
+                const input = document.getElementById('bannerHeightInput');
+                if (input) input.value = h;
+            }
+        }
+
+        function applySettings() {
+            const urlInput = document.getElementById('ffeUrlInput').value.trim();
+            const pastedText = document.getElementById('pastedHtmlInput').value.trim();
+            const durInput = parseFloat(document.getElementById('displayDurationInput').value);
+            const fetchInput = parseFloat(document.getElementById('fetchIntervalInput').value);
+            const heightInput = parseInt(document.getElementById('bannerHeightInput').value);
+
+            if (!isNaN(heightInput) && heightInput >= 50) {
+                document.documentElement.style.setProperty('--banner-height', `${heightInput}px`);
+            }
+
+            if (!isNaN(durInput) && durInput > 0) {
+                displayDuration = durInput * 1000;
+            }
+
+            if (pastedText.length > 0) {
+                isManualMode = true;
+                if (fetchTimer) clearInterval(fetchTimer);
+                parseInputContent(pastedText);
+            } else if (urlInput) {
+                isManualMode = false;
+                currentFfeUrl = urlInput;
+                fetchFFEData();
+                if (!isNaN(fetchInput) && fetchInput >= 10) {
+                    fetchInterval = fetchInput * 1000;
+                    if (fetchTimer) clearInterval(fetchTimer);
+                    fetchTimer = setInterval(fetchFFEData, fetchInterval);
+                }
+            }
+
+            const panel = document.getElementById('configPanel');
+            if (panel) panel.classList.remove('open');
+        }
+
+        async function fetchFFEData() {
+            if (isManualMode) return;
+
+            let htmlText = "";
+            try {
+                const response = await fetch(corsProxies[0](currentFfeUrl));
+                if (response.ok) {
+                    const data = await response.json();
+                    htmlText = data.contents;
+                }
+            } catch (e) {
+                try {
+                    const response = await fetch(corsProxies[1](currentFfeUrl));
+                    if (response.ok) {
+                        htmlText = await response.text();
+                    }
+                } catch (err) {
+                    console.error("Erreur réseau :", err);
+                }
+            }
+
+            if (htmlText) {
+                parseInputContent(htmlText);
+            }
+        }
+
+        function parseInputContent(rawContent) {
+            let parsedMatches = [];
+            let titleText = "Capechecs - Tournoi FFE";
+            let roundText = "Résultats";
+
+            const cleanText = rawContent.replace(/\u00a0/g, ' ').replace(/\r/g, '');
+            const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+            for (let line of lines) {
+                if (line.includes('Résultats') || line.includes('Round') || line.includes('Ronde')) {
+                    roundText = line;
+                    continue;
+                } else if (line.includes('Open') || line.includes('Tournoi') || line.includes('Capechecs')) {
+                    titleText = line;
+                    continue;
+                }
+
+                let parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
+
+                if (parts.length >= 7 && !isNaN(parseInt(parts[0]))) {
+                    parsedMatches.push({
+                        board: parts[0],
+                        whitePts: parts[1] || "",
+                        whiteName: parts[2] || "",
+                        whiteElo: parts[3] || "",
+                        result: parts[4] || "VS",
+                        blackName: parts[5] || "",
+                        blackElo: parts[6] || "",
+                        blackPts: parts[7] || ""
+                    });
+                    continue;
+                }
+
+                const rowRegex = /(\d{1,3})\s+([\d½X\.\-]+)\s+(.+?)\s+(\d{3,4}\s*[FkN]?)\s+(1\s*-\s*0|0\s*-\s*1|½\s*-\s*½|X\s*-\s*X|1\/2\s*-\s*1\/2|1\/2|\s*-\s*|VS)\s+(.+?)\s+(\d{3,4}\s*[FkN]?|EXEMPT|FEXEMPT)\s*([\d½X\.\-]*)/i;
+                const m = line.match(rowRegex);
+                if (m) {
+                    parsedMatches.push({
+                        board: m[1].trim(),
+                        whitePts: m[2].trim(),
+                        whiteName: m[3].trim(),
+                        whiteElo: m[4].trim(),
+                        result: m[5].trim(),
+                        blackName: m[6].trim(),
+                        blackElo: m[7].trim(),
+                        blackPts: m[8] ? m[8].trim() : ""
+                    });
+                }
+            }
+
+            if (parsedMatches.length === 0) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(rawContent, 'text/html');
+                const tables = doc.querySelectorAll('table');
+
+                tables.forEach(table => {
+                    const rows = table.querySelectorAll('tr');
+                    rows.forEach(row => {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length === 8) {
+                            const boardNum = cells[0].textContent.trim();
+                            if (!isNaN(parseInt(boardNum)) && parseInt(boardNum) > 0) {
+                                parsedMatches.push({
+                                    board: boardNum,
+                                    whitePts: cells[1].textContent.trim(),
+                                    whiteName: cells[2].textContent.trim(),
+                                    whiteElo: cells[3].textContent.trim().replace(/\u00a0/g, ' '),
+                                    result: cells[4].textContent.trim(),
+                                    blackName: cells[5].textContent.trim(),
+                                    blackElo: cells[6].textContent.trim().replace(/\u00a0/g, ' '),
+                                    blackPts: cells[7].textContent.trim()
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+
+            if (parsedMatches.length > 0) {
+                document.getElementById('tourneyTitle').textContent = titleText;
+                document.getElementById('roundInfo').textContent = roundText;
+                matchesData = parsedMatches;
+                
+                if (displayTimer) clearInterval(displayTimer);
+                currentIndex = 0;
+                renderNextMatch();
+                startLoop();
+            }
+        }
+
+        function loadFallbackData() {
+            document.getElementById('tourneyTitle').textContent = "Capechecs - Tournoi FFE";
+            document.getElementById('roundInfo').textContent = "Résultats de la ronde";
+            matchesData = [
+                { board: "1", whitePts: "0", whiteName: "RADOMSKYI Vladyslav", whiteElo: "2504 F", result: "1/2", blackName: "MAURIZZI Marc Andria", blackElo: "2624 F", blackPts: "0" }
+            ];
+            if (!displayTimer) {
+                renderNextMatch();
+                startLoop();
+            }
+        }
+
+        function renderNextMatch() {
+            if (matchesData.length === 0) return;
+
+            const viewport = document.getElementById('cardViewport');
+            const match = matchesData[currentIndex];
+
+            let resRaw = match.result ? match.result.replace(/\s+/g, '') : '';
+            let resDisplay = match.result;
+
+            if (resRaw === "X-X" || resRaw === "½-½" || resRaw === "1/2-1/2" || resRaw.includes("1/2") || resRaw.includes("X-X") || resRaw.includes("½-½")) {
+                resDisplay = "1/2";
+            } else if (!resRaw || resRaw === "-" || resRaw === "0-0" || resRaw === "VS") {
+                resDisplay = `<span class="score-empty">VS</span>`;
+            }
+
+            const whitePtsDisplay = match.whitePts;
+            const blackPtsDisplay = match.blackPts;
+
+            const cardHtml = `
+                <div class="match-card" id="card-${currentIndex}">
+                    <div class="board-badge">
+                        <span class="board-label">Ech.</span>
+                        <span class="board-number">${match.board}</span>
+                    </div>
+
+                    <div class="player-box white">
+                        <div class="player-name">${match.whiteName}</div>
+                        <div class="player-meta">
+                            <span class="pts-tag">${whitePtsDisplay} pt${whitePtsDisplay > 1 ? 's' : ''}</span>
+                            <span class="elo-tag">${match.whiteElo}</span>
+                        </div>
+                    </div>
+
+                    <div class="score-box">
+                        ${resDisplay}
+                    </div>
+
+                    <div class="player-box black">
+                        <div class="player-name">${match.blackName}</div>
+                        <div class="player-meta">
+                            <span class="elo-tag">${match.blackElo}</span>
+                            <span class="pts-tag">${blackPtsDisplay ? blackPtsDisplay + ' pt' + (blackPtsDisplay > 1 ? 's' : '') : ''}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const oldCard = viewport.querySelector('.match-card.active');
+            if (oldCard) {
+                oldCard.classList.remove('active');
+                oldCard.classList.add('exit');
+                setTimeout(() => oldCard.remove(), 500);
+            }
+
+            viewport.insertAdjacentHTML('beforeend', cardHtml);
+            const newCard = document.getElementById(`card-${currentIndex}`);
+            
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (newCard) newCard.classList.add('active');
+                });
+            });
+
+            currentIndex = (currentIndex + 1) % matchesData.length;
+        }
+
+        function startLoop() {
+            if (displayTimer) clearInterval(displayTimer);
+            displayTimer = setInterval(renderNextMatch, displayDuration);
+        }
+    </script>
+</body>
+</html>
