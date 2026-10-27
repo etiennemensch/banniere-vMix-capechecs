@@ -234,22 +234,21 @@
             border: 1px solid #444444;
         }
 
-        /* Bouton avec priorité maximale d'interaction */
         .config-toggle {
-            position: fixed !important;
-            top: 12px !important;
-            right: 12px !important;
-            background: var(--accent-gold) !important;
-            color: #000000 !important;
-            border: 2px solid #ffffff !important;
-            border-radius: 6px !important;
-            padding: 8px 16px !important;
-            font-size: 0.85rem !important;
-            font-weight: bold !important;
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            background: var(--accent-gold);
+            color: #000000;
+            border: 2px solid #ffffff;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
             cursor: pointer !important;
-            z-index: 9999999 !important;
+            z-index: 999999 !important;
             pointer-events: auto !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8) !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
         }
 
         .config-panel {
@@ -262,7 +261,7 @@
             border: 2px solid var(--accent-gold);
             padding: 20px;
             border-radius: 10px;
-            z-index: 10000000 !important;
+            z-index: 1000000 !important;
             width: 90%;
             max-width: 450px;
             max-height: 85vh;
@@ -411,24 +410,22 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('load', () => {
             const toggleBtn = document.getElementById('configToggleBtn');
             const applyBtn = document.getElementById('applyBtn');
 
             if (toggleBtn) {
-                toggleBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
+                toggleBtn.onclick = function(e) {
                     e.preventDefault();
                     togglePanel();
-                });
+                };
             }
 
             if (applyBtn) {
-                applyBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
+                applyBtn.onclick = function(e) {
                     e.preventDefault();
                     applySettings();
-                });
+                };
             }
 
             loadFallbackData();
@@ -524,48 +521,22 @@
             let titleText = "Capechecs - Tournoi FFE";
             let roundText = "Résultats";
 
-            const cleanText = rawContent.replace(/\u00a0/g, ' ').replace(/\r/g, '');
-            const lines = cleanText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            const cleanText = rawContent.replace(/\u00a0/g, ' ').trim();
 
-            for (let line of lines) {
-                if (line.includes('Résultats') || line.includes('Round') || line.includes('Ronde')) {
-                    roundText = line;
-                    continue;
-                } else if (line.includes('Open') || line.includes('Tournoi') || line.includes('Capechecs')) {
-                    titleText = line;
-                    continue;
-                }
+            const regex = /(\d{1,3})\s*([\d½X\.\-]+)\s*([A-Z\s\-'\.]+?)\s*(\d{3,4}\s*[FkN]?)\s*(1\s*-\s*0|0\s*-\s*1|½\s*-\s*½|X\s*-\s*X|1\/2\s*-\s*1\/2|\s*-\s*|\s+)\s*([A-Z\s\-'\.]+?)\s*(\d{3,4}\s*[FkN]?|EXEMPT|FEXEMPT)\s*([\d½X\.\-]*)/gi;
 
-                let parts = line.split(/\t+|\s{2,}/).map(p => p.trim()).filter(p => p.length > 0);
-
-                if (parts.length >= 7 && !isNaN(parseInt(parts[0]))) {
-                    parsedMatches.push({
-                        board: parts[0],
-                        whitePts: parts[1] || "",
-                        whiteName: parts[2] || "",
-                        whiteElo: parts[3] || "",
-                        result: parts[4] || "VS",
-                        blackName: parts[5] || "",
-                        blackElo: parts[6] || "",
-                        blackPts: parts[7] || ""
-                    });
-                    continue;
-                }
-
-                const rowRegex = /(\d{1,3})\s+([\d½X\.\-]+)\s+(.+?)\s+(\d{3,4}\s*[FkN]?)\s+(1\s*-\s*0|0\s*-\s*1|½\s*-\s*½|X\s*-\s*X|1\/2\s*-\s*1\/2|1\/2|\s*-\s*|VS)\s+(.+?)\s+(\d{3,4}\s*[FkN]?|EXEMPT|FEXEMPT)\s*([\d½X\.\-]*)/i;
-                const m = line.match(rowRegex);
-                if (m) {
-                    parsedMatches.push({
-                        board: m[1].trim(),
-                        whitePts: m[2].trim(),
-                        whiteName: m[3].trim(),
-                        whiteElo: m[4].trim(),
-                        result: m[5].trim(),
-                        blackName: m[6].trim(),
-                        blackElo: m[7].trim(),
-                        blackPts: m[8] ? m[8].trim() : ""
-                    });
-                }
+            let match;
+            while ((match = regex.exec(cleanText)) !== null) {
+                parsedMatches.push({
+                    board: match[1].trim(),
+                    whitePts: match[2].trim(),
+                    whiteName: match[3].trim(),
+                    whiteElo: match[4].trim(),
+                    result: match[5].trim(),
+                    blackName: match[6].trim(),
+                    blackElo: match[7].trim(),
+                    blackPts: match[8] ? match[8].trim() : ""
+                });
             }
 
             if (parsedMatches.length === 0) {
@@ -577,9 +548,18 @@
                     const rows = table.querySelectorAll('tr');
                     rows.forEach(row => {
                         const cells = row.querySelectorAll('td');
+                        if (cells.length === 1 || cells.length === 8) {
+                            const cellText = row.textContent;
+                            if (cellText.includes('Résultats') || cellText.includes('Open') || cellText.includes('Tournoi') || cellText.includes('Capechecs')) {
+                                const lines = cellText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                                if (lines.length >= 1) titleText = lines[0];
+                                if (lines.length >= 2) roundText = lines[1];
+                            }
+                        }
+
                         if (cells.length === 8) {
                             const boardNum = cells[0].textContent.trim();
-                            if (!isNaN(parseInt(boardNum)) && parseInt(boardNum) > 0) {
+                            if (!isNaN(parseInt(boardNum))) {
                                 parsedMatches.push({
                                     board: boardNum,
                                     whitePts: cells[1].textContent.trim(),
@@ -601,10 +581,11 @@
                 document.getElementById('roundInfo').textContent = roundText;
                 matchesData = parsedMatches;
                 
-                if (displayTimer) clearInterval(displayTimer);
-                currentIndex = 0;
-                renderNextMatch();
-                startLoop();
+                if (!displayTimer) {
+                    currentIndex = 0;
+                    renderNextMatch();
+                    startLoop();
+                }
             }
         }
 
@@ -612,7 +593,7 @@
             document.getElementById('tourneyTitle').textContent = "Capechecs - Tournoi FFE";
             document.getElementById('roundInfo').textContent = "Résultats de la ronde";
             matchesData = [
-                { board: "1", whitePts: "0", whiteName: "RADOMSKYI Vladyslav", whiteElo: "2504 F", result: "1/2", blackName: "MAURIZZI Marc Andria", blackElo: "2624 F", blackPts: "0" }
+                { board: "1", whitePts: "0", whiteName: "MAURIZZI Marc Andria", whiteElo: "2624 F", result: "VS", blackName: "BLANCHET Mathieu", blackElo: "2146 F", blackPts: "0" }
             ];
             if (!displayTimer) {
                 renderNextMatch();
@@ -626,15 +607,17 @@
             const viewport = document.getElementById('cardViewport');
             const match = matchesData[currentIndex];
 
+            // ISOLEMENT STRICT DE LA COLONNE RES. (MILIEU)
             let resRaw = match.result ? match.result.replace(/\s+/g, '') : '';
             let resDisplay = match.result;
 
-            if (resRaw === "X-X" || resRaw === "½-½" || resRaw === "1/2-1/2" || resRaw.includes("1/2") || resRaw.includes("X-X") || resRaw.includes("½-½")) {
+            if (resRaw === "X-X" || resRaw === "½-½" || resRaw === "1/2-1/2" || resRaw.includes("1/2-1/2") || resRaw.includes("X-X") || resRaw.includes("½-½")) {
                 resDisplay = "1/2";
             } else if (!resRaw || resRaw === "-" || resRaw === "0-0" || resRaw === "VS") {
                 resDisplay = `<span class="score-empty">VS</span>`;
             }
 
+            // LES COLONNES PTS (GAUCHE / DROITE) GARDENT LEUR SCORE NATUREL SANS MODIFICATION
             const whitePtsDisplay = match.whitePts;
             const blackPtsDisplay = match.blackPts;
 
