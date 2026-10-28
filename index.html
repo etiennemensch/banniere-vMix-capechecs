@@ -132,6 +132,8 @@
             display: flex;
             flex-direction: column;
             padding: 0 12px;
+            overflow: hidden;
+            min-width: 0;
         }
 
         .player-box.white {
@@ -172,11 +174,13 @@
             border-radius: 4px;
             font-size: 0.75rem;
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .pts-tag {
             color: var(--accent-gold);
             font-weight: 600;
+            white-space: nowrap;
         }
 
         .score-box {
@@ -191,6 +195,8 @@
             border: 1px solid var(--card-border);
             color: var(--accent-gold);
             letter-spacing: 1px;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
         .score-empty {
@@ -524,27 +530,80 @@
             }
         }
 
+        function cleanResultValue(val) {
+            if (!val) return "VS";
+            var v = val.replace(/\s+/g, '').trim();
+            if (v === "X-X" || v === "½-½" || v === "1/2-1/2" || v === "1/2" || v === "½" || v.includes("1/2") || v.includes("½")) {
+                return "1/2";
+            }
+            if (v === "1-0" || v === "0-1") {
+                return v.replace('-', ' - ');
+            }
+            if (v === "VS" || v === "-" || v === "0-0" || v === "") {
+                return "VS";
+            }
+            return v;
+        }
+
+        function isResultToken(str) {
+            if (!str) return false;
+            var clean = str.replace(/\s+/g, '');
+            if (/^(1-0|0-1|½-½|1\/2-1\/2|1\/2|½|X-X|VS|-|0-0)$/i.test(clean)) return true;
+            return false;
+        }
+
         function parseInputContent(rawContent) {
             var parsedMatches = [];
             var titleText = "24e rencontres du Cap - Grand Prix";
             var roundText = "Résultats";
 
-            var lines = rawContent.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+            var cleanText = rawContent.replace(/\u00a0/g, ' ').replace(/\r/g, '');
+            var lines = cleanText.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
 
             for (var i = 0; i < lines.length; i++) {
                 var line = lines[i];
+
+                if (line.includes('Résultats') || line.includes('Round') || line.includes('Ronde') || line.includes('Appariements')) {
+                    roundText = line;
+                    continue;
+                } else if (line.includes('Open') || line.includes('Tournoi') || line.includes('Capechecs') || line.includes('Cap')) {
+                    titleText = line;
+                    continue;
+                }
+
                 var parts = line.split(/\t+|\s{2,}/).map(function(p) { return p.trim(); }).filter(function(p) { return p.length > 0; });
 
                 if (parts.length >= 7 && !isNaN(parseInt(parts[0]))) {
+                    var bNum = parts[0];
+                    var wPts = parts[1] || "";
+                    var wName = parts[2] || "";
+                    var wElo = parts[3] || "";
+                    var resVal = "VS";
+                    var bName = "";
+                    var bElo = "";
+                    var bPts = "";
+
+                    if (parts.length >= 8 && isResultToken(parts[4])) {
+                        resVal = parts[4];
+                        bName = parts[5] || "";
+                        bElo = parts[6] || "";
+                        bPts = parts[7] || "";
+                    } else {
+                        resVal = "VS";
+                        bName = parts[4] || "";
+                        bElo = parts[5] || "";
+                        bPts = parts[6] || "";
+                    }
+
                     parsedMatches.push({
-                        board: parts[0],
-                        whitePts: parts[1] || "",
-                        whiteName: parts[2] || "",
-                        whiteElo: parts[3] || "",
-                        result: parts[4] || "VS",
-                        blackName: parts[5] || "",
-                        blackElo: parts[6] || "",
-                        blackPts: parts[7] || ""
+                        board: bNum,
+                        whitePts: wPts,
+                        whiteName: wName,
+                        whiteElo: wElo,
+                        result: cleanResultValue(resVal),
+                        blackName: bName,
+                        blackElo: bElo,
+                        blackPts: bPts
                     });
                 }
             }
